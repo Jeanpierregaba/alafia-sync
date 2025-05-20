@@ -106,6 +106,7 @@ const AppointmentsPage = () => {
     "Psychiatrie": ["Dr. Soumah", "Dr. Diakite"]
   };
 
+  // Handle booking appointment
   const handleBookAppointment = () => {
     if (!date || !specialty || !doctor || !time) {
       toast.error("Veuillez remplir tous les champs");
