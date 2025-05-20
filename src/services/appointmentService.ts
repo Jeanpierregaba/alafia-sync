@@ -1,7 +1,16 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Appointment, AppointmentFilters, AppointmentStatus } from "@/types/appointments";
+import { 
+  Appointment, 
+  AppointmentFilters, 
+  AppointmentStatus, 
+  AvailableSlot,
+  PractitionerAvailability,
+  AppointmentFormData,
+  AppointmentDocument
+} from "@/types/appointments";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 export async function fetchAppointments(filters: AppointmentFilters): Promise<Appointment[]> {
   console.log("Fetching appointments with filters:", filters);
@@ -137,5 +146,157 @@ export async function deleteAppointment(appointmentId: string): Promise<boolean>
     console.error('Error deleting appointment:', error);
     toast.error('Erreur lors de la suppression du rendez-vous');
     return false;
+  }
+}
+
+export async function fetchAvailableSlots(practitionerId: string, startDate: Date, endDate: Date): Promise<AvailableSlot[]> {
+  try {
+    const formattedStartDate = format(startDate, 'yyyy-MM-dd');
+    const formattedEndDate = format(endDate, 'yyyy-MM-dd');
+    
+    const { data, error } = await supabase
+      .from('available_slots')
+      .select('*')
+      .eq('practitioner_id', practitionerId)
+      .gte('slot_date', formattedStartDate)
+      .lte('slot_date', formattedEndDate)
+      .eq('is_available', true);
+    
+    if (error) {
+      console.error('Error fetching available slots:', error);
+      throw error;
+    }
+    
+    return data as AvailableSlot[];
+  } catch (error) {
+    console.error('Error in fetchAvailableSlots:', error);
+    toast.error('Erreur lors de la récupération des disponibilités');
+    return [];
+  }
+}
+
+export async function createAppointment(appointmentData: AppointmentFormData, userId: string): Promise<string | null> {
+  try {
+    const { date, startTime, reason, practitionerId, centerId, symptoms, medicalHistory, isEmergency } = appointmentData;
+    
+    // Calculate end time (30 minutes after start time by default)
+    const startDateTime = new Date(`${format(date, 'yyyy-MM-dd')}T${startTime}:00`);
+    const endDateTime = new Date(startDateTime);
+    endDateTime.setMinutes(endDateTime.getMinutes() + 30);
+    
+    const { data, error } = await supabase
+      .from('appointments')
+      .insert({
+        patient_id: userId,
+        practitioner_id: practitionerId,
+        center_id: centerId,
+        start_time: startDateTime.toISOString(),
+        end_time: endDateTime.toISOString(),
+        reason: reason,
+        symptoms: symptoms || null,
+        medical_history: medicalHistory || null,
+        is_emergency: isEmergency || false,
+        created_by: userId,
+        status: 'scheduled'
+      })
+      .select('id')
+      .single();
+    
+    if (error) {
+      console.error('Error creating appointment:', error);
+      throw error;
+    }
+    
+    toast.success('Rendez-vous créé avec succès');
+    return data.id;
+  } catch (error) {
+    console.error('Error in createAppointment:', error);
+    toast.error('Erreur lors de la création du rendez-vous');
+    return null;
+  }
+}
+
+export async function uploadAppointmentDocuments(appointmentId: string, documents: File[], userId: string): Promise<boolean> {
+  try {
+    for (const file of documents) {
+      // Upload file to storage
+      const filePath = `${userId}/${appointmentId}/${file.name}`;
+      const { error: storageError } = await supabase
+        .storage
+        .from('medical-documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (storageError) {
+        console.error('Error uploading document to storage:', storageError);
+        throw storageError;
+      }
+      
+      // Create document record in database
+      const { error: dbError } = await supabase
+        .from('appointment_documents')
+        .insert({
+          appointment_id: appointmentId,
+          file_name: file.name,
+          file_path: filePath,
+          file_type: file.type,
+          file_size: file.size,
+          uploaded_by: userId
+        });
+      
+      if (dbError) {
+        console.error('Error recording document in database:', dbError);
+        throw dbError;
+      }
+    }
+    
+    toast.success('Documents téléchargés avec succès');
+    return true;
+  } catch (error) {
+    console.error('Error in uploadAppointmentDocuments:', error);
+    toast.error('Erreur lors du téléchargement des documents');
+    return false;
+  }
+}
+
+export async function fetchAppointmentDocuments(appointmentId: string): Promise<AppointmentDocument[]> {
+  try {
+    const { data, error } = await supabase
+      .from('appointment_documents')
+      .select('*')
+      .eq('appointment_id', appointmentId);
+    
+    if (error) {
+      console.error('Error fetching appointment documents:', error);
+      throw error;
+    }
+    
+    return data as AppointmentDocument[];
+  } catch (error) {
+    console.error('Error in fetchAppointmentDocuments:', error);
+    toast.error('Erreur lors de la récupération des documents');
+    return [];
+  }
+}
+
+export async function getDocumentDownloadUrl(filePath: string): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .storage
+      .from('medical-documents')
+      .createSignedUrl(filePath, 60);
+    
+    if (error) {
+      console.error('Error getting download URL:', error);
+      throw error;
+    }
+    
+    return data.signedUrl;
+  } catch (error) {
+    console.error('Error in getDocumentDownloadUrl:', error);
+    toast.error('Erreur lors de la récupération du lien de téléchargement');
+    return null;
   }
 }

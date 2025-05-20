@@ -5,14 +5,22 @@ import {
   AppointmentFilters, 
   AppointmentStatus, 
   DEFAULT_FILTERS,
-  Appointment
+  Appointment,
+  AppointmentFormData
 } from "@/types/appointments";
 import { 
   fetchAppointments, 
   getAppointmentsCount, 
   updateAppointmentStatus,
-  deleteAppointment as deleteAppointmentService
+  deleteAppointment as deleteAppointmentService,
+  createAppointment,
+  uploadAppointmentDocuments,
+  fetchAvailableSlots,
+  fetchAppointmentDocuments,
+  getDocumentDownloadUrl
 } from "@/services/appointmentService";
+import { supabase } from "@/integrations/supabase/client";
+import { addDays } from "date-fns";
 
 // Re-export types and constants for backward compatibility
 export type { Appointment, AppointmentFilters, AppointmentStatus };
@@ -59,6 +67,39 @@ export function useAppointments(filters: AppointmentFilters = DEFAULT_FILTERS) {
     }
     return success;
   };
+
+  const handleCreateAppointment = async (appointmentData: AppointmentFormData): Promise<string | null> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Utilisateur non connecté");
+      
+      const appointmentId = await createAppointment(appointmentData, user.id);
+      
+      if (appointmentId && appointmentData.documents && appointmentData.documents.length > 0) {
+        await uploadAppointmentDocuments(appointmentId, appointmentData.documents, user.id);
+      }
+      
+      refetch();
+      return appointmentId;
+    } catch (error) {
+      console.error("Error creating appointment:", error);
+      return null;
+    }
+  };
+
+  const getAvailableSlots = async (practitionerId: string, date?: Date) => {
+    const startDate = date || new Date();
+    const endDate = addDays(startDate, 30);
+    return await fetchAvailableSlots(practitionerId, startDate, endDate);
+  };
+
+  const getAppointmentDocuments = async (appointmentId: string) => {
+    return await fetchAppointmentDocuments(appointmentId);
+  };
+
+  const getDownloadUrl = async (filePath: string) => {
+    return await getDocumentDownloadUrl(filePath);
+  };
   
   return {
     appointments,
@@ -67,6 +108,10 @@ export function useAppointments(filters: AppointmentFilters = DEFAULT_FILTERS) {
     refetch,
     totalAppointments,
     updateAppointmentStatus: handleUpdateAppointmentStatus,
-    deleteAppointment: handleDeleteAppointment
+    deleteAppointment: handleDeleteAppointment,
+    createAppointment: handleCreateAppointment,
+    getAvailableSlots,
+    getAppointmentDocuments,
+    getDownloadUrl
   };
 }

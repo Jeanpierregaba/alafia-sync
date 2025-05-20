@@ -28,6 +28,9 @@ export interface Appointment {
   center_id: string;
   center_name: string | null;
   center_city: string | null;
+  symptoms?: string | null;
+  medical_history?: string | null;
+  is_emergency?: boolean | null;
 }
 
 export interface AppointmentFilters {
@@ -37,6 +40,61 @@ export interface AppointmentFilters {
   centerID?: string;
   practitionerID?: string;
   patientName?: string;
+}
+
+export interface AppointmentFormData {
+  practitionerId: string;
+  centerId: string;
+  date: Date;
+  startTime: string;
+  reason: string;
+  symptoms?: string;
+  medicalHistory?: string;
+  isEmergency?: boolean;
+  documents?: File[];
+}
+
+export interface PractitionerAvailability {
+  id: string;
+  practitioner_id: string;
+  day_of_week: number;
+  start_time: string;
+  end_time: string;
+  break_start?: string | null;
+  break_end?: string | null;
+  is_available: boolean;
+}
+
+export interface AvailableSlot {
+  practitioner_id: string;
+  slot_date: string;
+  slot_start: string;
+  slot_end: string;
+  day_of_week: number;
+  is_available: boolean;
+}
+
+export interface AppointmentDocument {
+  id: string;
+  appointment_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string;
+  file_size: number;
+  uploaded_at: string;
+  uploaded_by: string;
+  description: string | null;
+}
+
+export interface NotificationPreference {
+  id: string;
+  user_id: string;
+  email_enabled: boolean;
+  sms_enabled: boolean;
+  whatsapp_enabled: boolean;
+  reminder_24h: boolean;
+  reminder_same_day: boolean;
+  phone_number: string | null;
 }
 
 export const DEFAULT_FILTERS: AppointmentFilters = {

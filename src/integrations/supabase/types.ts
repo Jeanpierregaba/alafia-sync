@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      appointment_documents: {
+        Row: {
+          appointment_id: string
+          description: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          appointment_id: string
+          description?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          file_type: string
+          id?: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          appointment_id?: string
+          description?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          file_type?: string
+          id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appointment_documents_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointments: {
         Row: {
           center_id: string
@@ -16,12 +67,16 @@ export type Database = {
           created_by: string | null
           end_time: string
           id: string
+          is_emergency: boolean | null
+          medical_history: string | null
           notes: string | null
+          notification_status: Json | null
           patient_id: string
           practitioner_id: string
           reason: string | null
           start_time: string
           status: string
+          symptoms: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -31,12 +86,16 @@ export type Database = {
           created_by?: string | null
           end_time: string
           id?: string
+          is_emergency?: boolean | null
+          medical_history?: string | null
           notes?: string | null
+          notification_status?: Json | null
           patient_id: string
           practitioner_id: string
           reason?: string | null
           start_time: string
           status?: string
+          symptoms?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -46,12 +105,16 @@ export type Database = {
           created_by?: string | null
           end_time?: string
           id?: string
+          is_emergency?: boolean | null
+          medical_history?: string | null
           notes?: string | null
+          notification_status?: Json | null
           patient_id?: string
           practitioner_id?: string
           reason?: string | null
           start_time?: string
           status?: string
+          symptoms?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -118,6 +181,93 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_logs: {
+        Row: {
+          appointment_id: string
+          content: string | null
+          error: string | null
+          id: string
+          notification_type: string
+          recipient: string
+          sent_at: string
+          status: string
+        }
+        Insert: {
+          appointment_id: string
+          content?: string | null
+          error?: string | null
+          id?: string
+          notification_type: string
+          recipient: string
+          sent_at?: string
+          status: string
+        }
+        Update: {
+          appointment_id?: string
+          content?: string | null
+          error?: string | null
+          id?: string
+          notification_type?: string
+          recipient?: string
+          sent_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_view"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          created_at: string
+          email_enabled: boolean
+          id: string
+          phone_number: string | null
+          reminder_24h: boolean
+          reminder_same_day: boolean
+          sms_enabled: boolean
+          updated_at: string
+          user_id: string
+          whatsapp_enabled: boolean
+        }
+        Insert: {
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          phone_number?: string | null
+          reminder_24h?: boolean
+          reminder_same_day?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+          user_id: string
+          whatsapp_enabled?: boolean
+        }
+        Update: {
+          created_at?: string
+          email_enabled?: boolean
+          id?: string
+          phone_number?: string | null
+          reminder_24h?: boolean
+          reminder_same_day?: boolean
+          sms_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+          whatsapp_enabled?: boolean
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           created_at: string
@@ -141,6 +291,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      practitioner_availability: {
+        Row: {
+          break_end: string | null
+          break_start: string | null
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean
+          practitioner_id: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean
+          practitioner_id: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          practitioner_id?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_availability_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       practitioner_centers: {
         Row: {
@@ -287,6 +484,25 @@ export type Database = {
           },
           {
             foreignKeyName: "appointments_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      available_slots: {
+        Row: {
+          day_of_week: number | null
+          is_available: boolean | null
+          practitioner_id: string | null
+          slot_date: string | null
+          slot_end: string | null
+          slot_start: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practitioner_availability_practitioner_id_fkey"
             columns: ["practitioner_id"]
             isOneToOne: false
             referencedRelation: "practitioners"
