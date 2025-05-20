@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -83,15 +82,18 @@ export function InteractiveCalendar({
       locale={fr}
       className={cn("border rounded-md p-4 pointer-events-auto", className)}
       classNames={{
-        day: (date) =>
-          cn(
-            "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
-            isDayAvailable(date) && !selectedDate?.toDateString() === date.toDateString()
-              ? "bg-primary/20 text-primary-foreground/80 hover:bg-primary/30 hover:text-primary-foreground"
-              : "",
-            date < new Date() && "text-muted-foreground opacity-50" // Dates passées grisées
-          ),
+        day: cn(
+          "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
+        ),
         day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
+      }}
+      modifiers={{
+        available: (date) => isDayAvailable(date),
+        unavailable: (date) => date < new Date() || !isDayAvailable(date)
+      }}
+      modifiersClassNames={{
+        available: "bg-primary/20 text-primary-foreground/80 hover:bg-primary/30 hover:text-primary-foreground",
+        unavailable: "text-muted-foreground opacity-50"
       }}
       disabled={(date) => date < new Date() || !isDayAvailable(date)}
     />
