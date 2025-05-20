@@ -24,7 +24,7 @@ const FacilityDashboardPage = () => {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Tableau de bord Centre de Santé</h2>
         <p className="text-muted-foreground">
-          Bienvenue sur votre espace de gestion MediSync.
+          Bienvenue sur votre espace de gestion AlafiaSync.
         </p>
       </div>
 

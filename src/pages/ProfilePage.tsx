@@ -609,7 +609,7 @@ const ProfilePage = () => {
                   </div>
                   <div className="ml-3 flex-1 text-sm text-blue-700">
                     <p>
-                      Ces informations sont confidentielles et ne sont partagées qu'avec les professionnels de santé que vous consultez via MediSync.
+                    Ces informations sont confidentielles et ne sont partagées qu'avec les professionnels de santé que vous consultez via AlafiaSync.
                     </p>
                   </div>
                 </div>
