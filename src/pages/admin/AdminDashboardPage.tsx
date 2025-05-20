@@ -138,7 +138,7 @@ const AdminDashboardPage = () => {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dashboard Administrateur</h2>
           <p className="text-muted-foreground">
-            Gérez l'ensemble des données et paramètres de la plateforme MediSync.
+            Gérez l'ensemble des données et paramètres de la plateforme AlafiaSync.
           </p>
         </div>
         <button 
@@ -240,7 +240,7 @@ const AdminDashboardPage = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Configurer les paramètres généraux de MediSync
+                Configurer les paramètres généraux de AlafiaSync
               </p>
             </CardContent>
           </Card>

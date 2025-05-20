@@ -181,7 +181,7 @@ const AppointmentsPage = () => {
                     <div className="grid gap-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                           <span>{appointment.date}</span>
                         </div>
                         <div className="flex items-center space-x-2">
@@ -245,7 +245,7 @@ const AppointmentsPage = () => {
                     <div className="grid gap-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                           <span>{appointment.date}</span>
                         </div>
                         <div className="flex items-center space-x-2">

@@ -27,7 +27,7 @@ type Setting = {
 
 // Map des paramètres avec leurs valeurs par défaut
 const defaultSettings = {
-  platform_name: 'MediSync',
+  platform_name: 'AlafiaSync',
   platform_description: 'Plateforme de gestion de rendez-vous médicaux',
   registration_enabled: true,
   max_appointments_per_day: 10,
@@ -35,7 +35,7 @@ const defaultSettings = {
   reminder_hours_before: 24,
   notification_enabled: true,
   maintenance_mode: false,
-  contact_email: 'contact@medisync.example.com',
+  contact_email: 'contact@alafiasync.com',
   contact_phone: '',
 };
 
@@ -141,7 +141,7 @@ const SettingsPage = () => {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Paramètres de la plateforme</h2>
         <p className="text-muted-foreground">
-          Configurez les paramètres généraux de MediSync.
+          Configurez les paramètres généraux de AlafiaSync.
         </p>
       </div>
 
@@ -183,7 +183,7 @@ const SettingsPage = () => {
             <CardHeader>
               <CardTitle>Paramètres généraux</CardTitle>
               <CardDescription>
-                Configuration de base de la plateforme MediSync
+                Configuration de base de la plateforme AlafiaSync
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">

@@ -44,7 +44,7 @@ const Header = ({ sidebarOpen, setSidebarOpen }: HeaderProps) => {
 
       <div className="w-full flex justify-between items-center">
         <div>
-          <h1 className="text-lg font-semibold md:text-xl">MediSync</h1>
+          <h1 className="text-lg font-semibold md:text-xl">AlafiaSync</h1>
           {isAdmin && <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Admin</span>}
         </div>
 
