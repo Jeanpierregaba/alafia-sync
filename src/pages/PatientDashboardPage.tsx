@@ -22,7 +22,7 @@ const PatientDashboardPage = () => {
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Tableau de bord</h2>
         <p className="text-muted-foreground">
-          Bienvenue sur votre espace personnel MediSync.
+          Bienvenue sur votre espace personnel AlafiaSync.
         </p>
       </div>
 
