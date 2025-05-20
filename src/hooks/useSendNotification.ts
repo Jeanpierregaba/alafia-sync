@@ -64,9 +64,10 @@ export function useSendNotification() {
       }
       
       // Mettre à jour le statut de notification dans la base de données
-      // Correction : Vérifier que notification_status est bien un objet JSON
-      const notificationStatus = appointment.notification_status ? 
-        { ...appointment.notification_status } : {};
+      // S'assurer que notification_status est un objet valide pour éviter l'erreur de spread
+      const notificationStatus = typeof appointment.notification_status === 'object' && appointment.notification_status !== null 
+        ? { ...appointment.notification_status } 
+        : {};
       
       notificationStatus[type] = new Date().toISOString();
       
