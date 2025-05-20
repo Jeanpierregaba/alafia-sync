@@ -54,9 +54,9 @@ const LandingPage = () => {
   // Hero slider images
   const heroImages = [
     "/placeholder.svg",
-    "https://images.unsplash.com/photo-1649972904349-6e44c42644a7?auto=format&fit=crop&q=80&w=1200&h=700",
-    "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200&h=700",
-    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=1200&h=700"
+    "https://www.freepik.com/free-photo/portrait-nurse-scrubs-clinic_33454502.htm#fromView=search&page=1&position=15&uuid=66370ecd-3938-4bd9-b654-3556ce96f7cf&query=personnel+soignant",
+    "https://www.freepik.com/premium-photo/senior-man-nurse-helping-with-walker-hospital-with-rehabilitation-assistance-physical-therapy-elderly-patient-caregiver-with-walking-support-clinic-mobility-wellness_311153640.htm#fromView=search&page=1&position=5&uuid=5b75ea3d-e8ec-4998-994a-265cb33a195e&query=personnel+soignant+avec+un+patient",
+    "https://www.freepik.com/free-photo/africa-humanitarian-aid-doctor-taking-care-patient_18955074.htm#fromView=search&page=1&position=6&uuid=5b75ea3d-e8ec-4998-994a-265cb33a195e&query=personnel+soignant+avec+un+patient"
   ];
 
   return (
@@ -70,7 +70,7 @@ const LandingPage = () => {
                 <path d="M8 4C5.79 4 4 5.79 4 8C4 10.21 5.79 12 8 12C10.21 12 12 10.21 12 8C12 5.79 10.21 4 8 4ZM8.5 10H7.5V8.5H6V7.5H7.5V6H8.5V7.5H10V8.5H8.5V10Z" fill="white"/>
               </svg>
             </div>
-            <span className="text-xl font-semibold">ALAFIA SYNC</span>
+            <span className="text-xl font-bold">ALAFIA SYNC</span>
           </div>
           <div className="hidden md:flex items-center gap-6">
             <a href="#about" className="text-muted-foreground hover:text-foreground transition-colors">À propos</a>
