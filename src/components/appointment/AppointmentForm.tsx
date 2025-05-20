@@ -13,7 +13,7 @@ import { InteractiveCalendar } from "./InteractiveCalendar";
 import { TimeslotSelector } from "./TimeslotSelector";
 import { DocumentUploader } from "./DocumentUploader";
 import { useAppointments } from "@/hooks/useAppointments";
-import { useState as useHookState } from "@/hooks/use-state";
+// Suppression de l'import inexistant useState de @/hooks/use-state
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { AppointmentFormData, AvailableSlot } from "@/types/appointments";

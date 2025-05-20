@@ -27,7 +27,7 @@ export function useSendNotification() {
       // Récupérer les détails du rendez-vous pour vérification
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
-        .select('patient_id, status')
+        .select('patient_id, status, notification_status')
         .eq('id', appointmentId)
         .single();
       
@@ -64,7 +64,10 @@ export function useSendNotification() {
       }
       
       // Mettre à jour le statut de notification dans la base de données
-      const notificationStatus = appointment.status.notification_status || {};
+      // Correction : Vérifier que notification_status est bien un objet JSON
+      const notificationStatus = appointment.notification_status ? 
+        { ...appointment.notification_status } : {};
+      
       notificationStatus[type] = new Date().toISOString();
       
       await supabase

@@ -1,29 +1,28 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AppointmentForm } from "@/components/appointment/AppointmentForm";
 import { AppointmentsList } from "@/components/appointment/AppointmentsList";
 import { NotificationPreferences } from "@/components/appointment/NotificationPreferences";
-import { useAppointments } from "@/hooks/useAppointments";
+import { useAppointments, AppointmentFilters } from "@/hooks/useAppointments";
 import { endOfDay, startOfDay, subMonths, addMonths } from "date-fns";
 import { toast } from "sonner";
 
 export default function AppointmentPage() {
   const [activeTab, setActiveTab] = useState("upcoming");
   
-  // Filtres pour les rendez-vous à venir
-  const upcomingFilters = {
+  // Filtres pour les rendez-vous à venir avec typage correct
+  const upcomingFilters: AppointmentFilters = {
     dateFrom: startOfDay(new Date()).toISOString(),
     dateTo: endOfDay(addMonths(new Date(), 6)).toISOString(),
-    status: 'all'
+    status: 'all'  // 'all' est maintenant un type valide grâce à l'union type dans AppointmentFilters
   };
   
-  // Filtres pour les rendez-vous passés
-  const pastFilters = {
+  // Filtres pour les rendez-vous passés avec typage correct
+  const pastFilters: AppointmentFilters = {
     dateFrom: startOfDay(subMonths(new Date(), 12)).toISOString(),
     dateTo: endOfDay(new Date()).toISOString(),
-    status: 'all'
+    status: 'all'  // 'all' est maintenant un type valide
   };
   
   // Utiliser le hook pour charger les rendez-vous

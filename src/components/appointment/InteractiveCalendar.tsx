@@ -94,6 +94,7 @@ export function InteractiveCalendar({
         day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
       }}
       disabled={(date) => {
+        // Correction : ne pas retourner une fonction, mais un booléen directement
         return date < new Date() || !isDayAvailable(date);
       }}
     />
