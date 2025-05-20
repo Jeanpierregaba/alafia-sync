@@ -53,7 +53,7 @@ const LandingPage = () => {
 
   // Hero slider images
   const heroImages = [
-    "/placeholder.svg",
+    "https://cdn.pixabay.com/photo/2013/02/10/14/49/operation-80124_1280.jpg",
     "https://www.freepik.com/free-photo/portrait-nurse-scrubs-clinic_33454502.htm#fromView=search&page=1&position=15&uuid=66370ecd-3938-4bd9-b654-3556ce96f7cf&query=personnel+soignant",
     "https://www.freepik.com/premium-photo/senior-man-nurse-helping-with-walker-hospital-with-rehabilitation-assistance-physical-therapy-elderly-patient-caregiver-with-walking-support-clinic-mobility-wellness_311153640.htm#fromView=search&page=1&position=5&uuid=5b75ea3d-e8ec-4998-994a-265cb33a195e&query=personnel+soignant+avec+un+patient",
     "https://www.freepik.com/free-photo/africa-humanitarian-aid-doctor-taking-care-patient_18955074.htm#fromView=search&page=1&position=6&uuid=5b75ea3d-e8ec-4998-994a-265cb33a195e&query=personnel+soignant+avec+un+patient"
