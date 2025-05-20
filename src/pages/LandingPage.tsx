@@ -54,7 +54,7 @@ const LandingPage = () => {
   // Hero slider images
   const heroImages = [
     "https://cdn.pixabay.com/photo/2013/02/10/14/49/operation-80124_1280.jpg",
-    "https://drive.google.com/file/d/1_VsGnhuXp4Qkt4okFAx6cE_LsH4iVlw9/view?usp=sharing",
+    "https://media.istockphoto.com/id/1468497267/fr/photo/portrait-diversit%C3%A9-et-%C3%A9quipe-heureuse-de-m%C3%A9decins-avec-un-travail-d%C3%A9quipe-enthousiaste.jpg?s=2048x2048&w=is&k=20&c=wWww1A02KN_6SEgv3rwyXPjqi3V8ZRQGrc1KvRGwN1k=",
     "https://www.freepik.com/premium-photo/senior-man-nurse-helping-with-walker-hospital-with-rehabilitation-assistance-physical-therapy-elderly-patient-caregiver-with-walking-support-clinic-mobility-wellness_311153640.htm#fromView=search&page=1&position=5&uuid=5b75ea3d-e8ec-4998-994a-265cb33a195e&query=personnel+soignant+avec+un+patient",
     "https://www.freepik.com/free-photo/africa-humanitarian-aid-doctor-taking-care-patient_18955074.htm#fromView=search&page=1&position=6&uuid=5b75ea3d-e8ec-4998-994a-265cb33a195e&query=personnel+soignant+avec+un+patient"
   ];
