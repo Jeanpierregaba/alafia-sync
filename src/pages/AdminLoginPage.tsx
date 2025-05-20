@@ -96,7 +96,7 @@ const AdminLoginPage = () => {
                 <path d="M8 4C5.79 4 4 5.79 4 8C4 10.21 5.79 12 8 12C10.21 12 12 10.21 12 8C12 5.79 10.21 4 8 4ZM8.5 10H7.5V8.5H6V7.5H7.5V6H8.5V7.5H10V8.5H8.5V10Z" fill="white"/>
               </svg>
             </div>
-            <span className="text-xl font-semibold">MediSync</span>
+            <span className="text-xl font-semibold">ALAFIA SYNC</span>
           </Link>
         </div>
 
@@ -127,7 +127,7 @@ const AdminLoginPage = () => {
                     <FormItem>
                       <FormLabel>Email administrateur</FormLabel>
                       <FormControl>
-                        <Input placeholder="admin@medisync.com" {...field} />
+                        <Input placeholder="admin@alafiasync.com" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
