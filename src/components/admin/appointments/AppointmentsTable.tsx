@@ -40,7 +40,7 @@ export function AppointmentsTable({
   const [processingAction, setProcessingAction] = useState<boolean>(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
   
-  const handleStatusChange = async (id: string, newStatus: AppointmentStatus) => {
+  const handleStatusChange = async (id: string, newStatus: AppointmentStatus): Promise<boolean> => {
     setProcessingAction(true);
     setProcessingId(id);
     
@@ -56,6 +56,8 @@ export function AppointmentsTable({
         action: null
       });
     }
+    
+    return success;
   };
   
   const handleDeleteConfirm = async () => {
