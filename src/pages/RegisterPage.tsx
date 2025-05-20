@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -144,7 +143,7 @@ const RegisterPage = () => {
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Sélectionnez un type" />
+                            <SelectValue placeholder="Sélectionner un type" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>

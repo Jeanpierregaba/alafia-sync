@@ -237,7 +237,7 @@ export function AppointmentsFilters({ filters, onFiltersChange }: AppointmentsFi
               <SelectValue placeholder="Tous les centres" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tous les centres</SelectItem>
+              <SelectItem key="all-centers" value="all">Tous les centres</SelectItem>
               {healthCenters.map((center: any) => (
                 <SelectItem key={center.id} value={center.id}>
                   {center.name}
@@ -260,7 +260,7 @@ export function AppointmentsFilters({ filters, onFiltersChange }: AppointmentsFi
               <SelectValue placeholder="Tous les praticiens" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Tous les praticiens</SelectItem>
+              <SelectItem key="all-practitioners" value="all">Tous les praticiens</SelectItem>
               {practitioners.map((practitioner: any) => (
                 <SelectItem key={practitioner.id} value={practitioner.id}>
                   {practitioner.profile?.first_name} {practitioner.profile?.last_name} - {practitioner.speciality}

@@ -44,7 +44,7 @@ export function useAppointments(filters: AppointmentFilters = DEFAULT_FILTERS) {
     queryFn: () => fetchAppointments(filters)
   });
   
-  const handleUpdateAppointmentStatus = async (appointmentId: string, status: AppointmentStatus) => {
+  const handleUpdateAppointmentStatus = async (appointmentId: string, status: AppointmentStatus): Promise<boolean> => {
     const success = await updateAppointmentStatus(appointmentId, status);
     if (success) {
       refetch();
