@@ -47,7 +47,7 @@ export function useQueueNotifications() {
       // Récupérer les données du patient depuis les profiles
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, email')
+        .select('id')
         .eq('id', entry.patient_id)
         .single();
       
@@ -57,9 +57,8 @@ export function useQueueNotifications() {
         return false;
       }
       
-      // Get email from profiles or use a fallback
-      // We simulate this since email might not be in the profiles table
-      const patientEmail = profileData.email || `patient-${entry.patient_id}@example.com`;
+      // Generate fallback email since it doesn't exist in profiles table
+      const patientEmail = `patient-${entry.patient_id}@example.com`;
       
       // Enregistrer une notification directement
       const { error: notifError } = await supabase

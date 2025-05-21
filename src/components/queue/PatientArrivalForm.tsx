@@ -45,6 +45,18 @@ type SearchResult = {
   fullName: string;
 };
 
+// Simple helper function to safely extract profile data
+const extractProfileData = (profiles: any): { firstName: string, lastName: string } => {
+  if (!profiles || typeof profiles !== 'object') {
+    return { firstName: '', lastName: '' };
+  }
+  
+  return {
+    firstName: typeof profiles.first_name === 'string' ? profiles.first_name : '',
+    lastName: typeof profiles.last_name === 'string' ? profiles.last_name : ''
+  };
+};
+
 export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArrivalFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [queues, setQueues] = useState<Array<{ id: string; name: string }>>([]);
@@ -113,13 +125,12 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
 
         if (data) {
           for (const item of data) {
-            if (item.practitioners && 
-                typeof item.practitioners === 'object') {
-              // Safely access nested properties with type checking and null checks
+            if (item.practitioners && typeof item.practitioners === 'object') {
               const practitioner = item.practitioners as any;
-              const profiles = practitioner.profiles || {};
-              const firstName = typeof profiles === 'object' ? profiles.first_name || '' : '';
-              const lastName = typeof profiles === 'object' ? profiles.last_name || '' : '';
+              if (!practitioner) continue;
+              
+              const profiles = practitioner.profiles;
+              const { firstName, lastName } = extractProfileData(profiles);
               
               formattedPractitioners.push({
                 id: practitioner.id || '',
@@ -144,7 +155,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     
     setIsSearching(true);
     try {
-      // Recherche par email ou nom
+      // Recherche par nom
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name")
@@ -159,13 +170,12 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       if (data) {
         for (const patient of data) {
           if (patient && typeof patient === 'object' && patient.id) {
-            // Safely access properties with null checks
             const firstName = patient.first_name || '';
             const lastName = patient.last_name || '';
             
             results.push({
               id: patient.id,
-              email: null, // Email not available in profiles table
+              email: null,
               fullName: `${firstName} ${lastName}`.trim() || 'Patient sans nom'
             });
           }
@@ -208,9 +218,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       
       if (data) {
         for (const apt of data) {
-          const profiles = apt.profiles as Record<string, any> | null;
-          const firstName = profiles?.first_name || '';
-          const lastName = profiles?.last_name || '';
+          const { firstName, lastName } = extractProfileData(apt.profiles);
           const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
             
           formattedAppointments.push({
