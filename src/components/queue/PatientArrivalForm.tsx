@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +12,7 @@ import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
+// Define a simpler schema without complex nested types
 const formSchema = z.object({
   patientId: z.string().optional(),
   patientEmail: z.string().email().optional(),
@@ -21,6 +21,9 @@ const formSchema = z.object({
   appointmentId: z.string().optional(),
   registrationType: z.enum(["appointment", "search", "walkIn"]),
 });
+
+// Use type alias instead of direct type annotation
+type FormValues = z.infer<typeof formSchema>;
 
 type PatientArrivalFormProps = {
   centerId: string;
@@ -65,7 +68,8 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
-  const form = useForm<z.infer<typeof formSchema>>({
+  // Initialize form with explicit type to avoid deep instantiation
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       registrationType: "appointment",
@@ -247,7 +251,8 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     }
   }, [registrationType]);
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  // More simplified form submission handler
+  const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
       let patientId = values.patientId;
