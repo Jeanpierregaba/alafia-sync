@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -251,8 +252,13 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     }
   }, [registrationType]);
 
-  // More simplified form submission handler
-  const onSubmit = async (values: FormValues) => {
+  // Simplified form submission handler with explicit type annotation
+  const onSubmit = (data: FormValues) => {
+    handleFormSubmission(data);
+  };
+
+  // Separate function for form submission logic to reduce type complexity
+  const handleFormSubmission = async (values: FormValues) => {
     setIsLoading(true);
     try {
       let patientId = values.patientId;
