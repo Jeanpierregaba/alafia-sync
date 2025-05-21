@@ -44,10 +44,10 @@ export function useQueueNotifications() {
         return await sendAppointmentNotification(appointmentId, notifType);
       }
       
-      // Récupérer l'email du patient depuis les profiles
+      // Récupérer les données du patient depuis les profiles
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, email')
         .eq('id', entry.patient_id)
         .single();
       
@@ -57,16 +57,11 @@ export function useQueueNotifications() {
         return false;
       }
       
-      // Get email from auth.users table via a Supabase edge function or use another approach
-      // For now, we'll simulate having an email
-      const patientEmail = `patient-${entry.patient_id}@example.com`;
+      // Get email from profiles or use a fallback
+      // We simulate this since email might not be in the profiles table
+      const patientEmail = profileData.email || `patient-${entry.patient_id}@example.com`;
       
-      if (!patientEmail) {
-        toast.error("Erreur: Email du patient non trouvé");
-        return false;
-      }
-      
-      // Sinon, enregistrer une notification directement
+      // Enregistrer une notification directement
       const { error: notifError } = await supabase
         .from('notification_logs')
         .insert({

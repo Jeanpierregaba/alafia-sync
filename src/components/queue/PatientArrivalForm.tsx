@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -114,13 +115,14 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
           for (const item of data) {
             if (item.practitioners && 
                 typeof item.practitioners === 'object') {
-              // Safely access nested properties with type checking
-              const profiles = (item.practitioners as any).profiles;
-              const firstName = profiles && typeof profiles === 'object' ? profiles.first_name || '' : '';
-              const lastName = profiles && typeof profiles === 'object' ? profiles.last_name || '' : '';
+              // Safely access nested properties with type checking and null checks
+              const practitioner = item.practitioners as any;
+              const profiles = practitioner.profiles || {};
+              const firstName = typeof profiles === 'object' ? profiles.first_name || '' : '';
+              const lastName = typeof profiles === 'object' ? profiles.last_name || '' : '';
               
               formattedPractitioners.push({
-                id: (item.practitioners as any).id,
+                id: practitioner.id || '',
                 name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
               });
             }
@@ -157,6 +159,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       if (data) {
         for (const patient of data) {
           if (patient && typeof patient === 'object' && patient.id) {
+            // Safely access properties with null checks
             const firstName = patient.first_name || '';
             const lastName = patient.last_name || '';
             
@@ -205,21 +208,20 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       
       if (data) {
         for (const apt of data) {
-          if (apt && apt.profiles && typeof apt.profiles === 'object') {
-            const firstName = (apt.profiles as any).first_name || '';
-            const lastName = (apt.profiles as any).last_name || '';
-            const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
+          const profiles = apt.profiles as Record<string, any> | null;
+          const firstName = profiles?.first_name || '';
+          const lastName = profiles?.last_name || '';
+          const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
             
-            formattedAppointments.push({
-              id: apt.id,
-              patientName,
-              patientId: apt.patient_id,
-              startTime: new Date(apt.start_time).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit"
-              })
-            });
-          }
+          formattedAppointments.push({
+            id: apt.id,
+            patientName,
+            patientId: apt.patient_id,
+            startTime: new Date(apt.start_time).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit"
+            })
+          });
         }
       }
       

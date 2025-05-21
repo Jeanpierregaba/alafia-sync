@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,13 +10,21 @@ import { QueueEntry } from "@/hooks/useWaitingQueue";
 import { useQueueNotifications } from "@/hooks/useQueueNotifications";
 import { toast } from "sonner";
 
+type QueueEntryWithWaitingQueue = QueueEntry & {
+  waiting_queues?: {
+    name: string;
+    description: string | null;
+    average_wait_time: number;
+  };
+};
+
 const PatientQueuePage = () => {
   const { user } = useAuth();
-  const [userQueueEntries, setUserQueueEntries] = useState<QueueEntry[]>([]);
+  const [userQueueEntries, setUserQueueEntries] = useState<QueueEntryWithWaitingQueue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { requestDelay } = useQueueNotifications();
   const [delayReason, setDelayReason] = useState("");
-  const [showDelayForm, setShowDelayForm] = useState(false);
+  const [showDelayForm, setShowDelayForm] = useState<string | false>(false);
   const [processingDelayRequest, setProcessingDelayRequest] = useState(false);
 
   useEffect(() => {
@@ -39,8 +48,8 @@ const PatientQueuePage = () => {
 
         if (error) throw error;
 
-        // Process data to match QueueEntry type
-        const processedData: QueueEntry[] = (data || []).map(entry => ({
+        // Process data to match QueueEntry type with waiting_queues
+        const processedData: QueueEntryWithWaitingQueue[] = (data || []).map(entry => ({
           ...entry,
           status: entry.status as QueueEntry['status'],
           patient: { 

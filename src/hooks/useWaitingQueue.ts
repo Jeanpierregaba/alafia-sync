@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -61,7 +62,7 @@ export const useWaitingQueue = (centerId?: string) => {
         
         if (error) throw error;
         
-        // Type cast pour s'assurer que le statut correspond au type attendu
+        // Type cast to ensure status matches the expected type
         const typedData = (data || []).map(q => ({
           ...q,
           status: q.status as 'active' | 'inactive' | 'paused'
@@ -114,11 +115,16 @@ export const useWaitingQueue = (centerId?: string) => {
         const typedData: QueueEntry[] = data.map(entry => {
           // Default patient info if profiles data is missing or has an error
           const patientInfo = {
-            first_name: entry.profiles && typeof entry.profiles === 'object' ? 
-              (entry.profiles as any).first_name || null : null,
-            last_name: entry.profiles && typeof entry.profiles === 'object' ? 
-              (entry.profiles as any).last_name || null : null
+            first_name: null as string | null,
+            last_name: null as string | null
           };
+          
+          // Safely extract patient info from profiles if available
+          if (entry.profiles && typeof entry.profiles === 'object') {
+            const profiles = entry.profiles as any;
+            patientInfo.first_name = profiles?.first_name || null;
+            patientInfo.last_name = profiles?.last_name || null;
+          }
             
           return {
             ...entry,
