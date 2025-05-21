@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,23 +37,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
   useEffect(() => {
-    // Set up auth state listener first
+    // First set up the auth state change listener to avoid missing events
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         console.log('Auth state change:', event);
+        
+        // Update state with session data
         setSession(newSession);
         setUser(newSession?.user ?? null);
 
+        // Handle different auth events
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (newSession?.user) {
-            // Use setTimeout to avoid recursion issues with Supabase
+            // Use setTimeout to avoid recursion with Supabase auth
             setTimeout(() => {
               fetchUserProfile(newSession.user!.id);
             }, 0);
           }
-        }
-        
-        if (event === 'SIGNED_OUT') {
+        } else if (event === 'SIGNED_OUT') {
           setProfile(null);
           setIsAdmin(false);
         }
@@ -63,8 +65,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const initializeAuth = async () => {
       setIsLoading(true);
       try {
+        // Get current session if it exists
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         console.log("Current session:", currentSession);
+        
+        // Update state with session data
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -82,8 +87,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     };
 
+    // Initialize auth state
     initializeAuth();
 
+    // Clean up subscription on unmount
     return () => {
       subscription.unsubscribe();
     };
@@ -147,6 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Sign up function
   const signUp = async (email: string, password: string, userData: Partial<UserProfile>) => {
     setIsLoading(true);
     try {
@@ -176,6 +184,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Sign in function
   const signIn = async (email: string, password: string, isAdminLogin: boolean = false) => {
     setIsLoading(true);
     try {
@@ -198,6 +207,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // Sign out function
   const signOut = async () => {
     try {
       await supabase.auth.signOut();

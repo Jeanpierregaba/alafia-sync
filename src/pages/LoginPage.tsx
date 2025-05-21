@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -10,8 +11,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/useAuth";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +23,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Email invalide"),
@@ -48,25 +47,12 @@ const LoginPage = () => {
     },
   });
 
+  // Updated form submission handler
   const onSubmit = async (values: LoginFormValues) => {
     setLoginError(null);
     try {
       await signIn(values.email, values.password);
-      
-      // Afficher les métadonnées utilisateur pour débogage
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        throw userError;
-      }
-      
-      if (user) {
-        console.log("User metadata:", user.user_metadata);
-        console.log("User type from metadata:", user.user_metadata?.user_type);
-        
-        // Redirection vers le tableau de bord
-        navigate("/app");
-      }
+      navigate("/app");
     } catch (error: any) {
       console.error("Erreur de connexion:", error);
       setLoginError("Identifiants incorrects ou problème de connexion");
