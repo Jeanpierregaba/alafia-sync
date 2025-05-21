@@ -408,41 +408,222 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          allergies: string | null
           avatar_url: string | null
+          blood_type: string | null
           created_at: string
           date_of_birth: string | null
           first_name: string | null
           gender: string | null
           id: string
           last_name: string | null
+          medical_history: string | null
+          phone: number | null
           updated_at: string
           user_type: string
         }
         Insert: {
           address?: string | null
+          allergies?: string | null
           avatar_url?: string | null
+          blood_type?: string | null
           created_at?: string
           date_of_birth?: string | null
           first_name?: string | null
           gender?: string | null
           id: string
           last_name?: string | null
+          medical_history?: string | null
+          phone?: number | null
           updated_at?: string
           user_type: string
         }
         Update: {
           address?: string | null
+          allergies?: string | null
           avatar_url?: string | null
+          blood_type?: string | null
           created_at?: string
           date_of_birth?: string | null
           first_name?: string | null
           gender?: string | null
           id?: string
           last_name?: string | null
+          medical_history?: string | null
+          phone?: number | null
           updated_at?: string
           user_type?: string
         }
         Relationships: []
+      }
+      queue_entries: {
+        Row: {
+          appointment_id: string | null
+          arrival_time: string | null
+          created_at: string
+          delay_notes: string | null
+          delay_request_at: string | null
+          end_time: string | null
+          estimated_wait_time: number | null
+          id: string
+          notified_at: string | null
+          patient_id: string
+          position: number | null
+          practitioner_id: string | null
+          queue_id: string
+          start_time: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          appointment_id?: string | null
+          arrival_time?: string | null
+          created_at?: string
+          delay_notes?: string | null
+          delay_request_at?: string | null
+          end_time?: string | null
+          estimated_wait_time?: number | null
+          id?: string
+          notified_at?: string | null
+          patient_id: string
+          position?: number | null
+          practitioner_id?: string | null
+          queue_id: string
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          appointment_id?: string | null
+          arrival_time?: string | null
+          created_at?: string
+          delay_notes?: string | null
+          delay_request_at?: string | null
+          end_time?: string | null
+          estimated_wait_time?: number | null
+          id?: string
+          notified_at?: string | null
+          patient_id?: string
+          position?: number | null
+          practitioner_id?: string | null
+          queue_id?: string
+          start_time?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_entries_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_entries_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_entries_practitioner_id_fkey"
+            columns: ["practitioner_id"]
+            isOneToOne: false
+            referencedRelation: "practitioners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_entries_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_queues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      queue_logs: {
+        Row: {
+          details: Json | null
+          entry_id: string | null
+          event_time: string
+          event_type: string
+          id: string
+          queue_id: string
+        }
+        Insert: {
+          details?: Json | null
+          entry_id?: string | null
+          event_time?: string
+          event_type: string
+          id?: string
+          queue_id: string
+        }
+        Update: {
+          details?: Json | null
+          entry_id?: string | null
+          event_time?: string
+          event_type?: string
+          id?: string
+          queue_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "queue_logs_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "queue_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "queue_logs_queue_id_fkey"
+            columns: ["queue_id"]
+            isOneToOne: false
+            referencedRelation: "waiting_queues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      waiting_queues: {
+        Row: {
+          average_wait_time: number
+          center_id: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          average_wait_time?: number
+          center_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          average_wait_time?: number
+          center_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "waiting_queues_center_id_fkey"
+            columns: ["center_id"]
+            isOneToOne: false
+            referencedRelation: "health_centers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
