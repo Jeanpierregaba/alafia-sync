@@ -252,24 +252,24 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     }
   }, [registrationType]);
 
-  // Simplified form submission handler with explicit type annotation
-  const onSubmit = (data: FormValues) => {
-    handleFormSubmission(data);
-  };
+  // Completely simplified form submission using direct function calls
+  const onSubmit = form.handleSubmit((values) => {
+    void handlePatientRegistration(values);
+  });
 
-  // Separate function for form submission logic to reduce type complexity
-  const handleFormSubmission = async (values: FormValues) => {
+  // Function with clear, non-circular typing
+  const handlePatientRegistration = async (formData: FormValues) => {
     setIsLoading(true);
     try {
-      let patientId = values.patientId;
+      let patientId = formData.patientId;
       
       // Pour les patients qui arrivent sans rendez-vous
-      if (values.registrationType === "walkIn" && values.patientEmail) {
+      if (formData.registrationType === "walkIn" && formData.patientEmail) {
         // Créer un compte patient temporaire si nécessaire
         const { data: existingUser, error: existingUserError } = await supabase
           .from('profiles')
           .select('id')
-          .eq('email', values.patientEmail)
+          .eq('email', formData.patientEmail)
           .maybeSingle();
         
         if (!existingUserError && existingUser) {
@@ -280,7 +280,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
             .from('profiles')
             .insert({
               id: crypto.randomUUID(),
-              email: values.patientEmail,
+              email: formData.patientEmail,
               first_name: "Patient",
               last_name: "Temporaire",
               user_type: "patient"
@@ -293,7 +293,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         }
       }
       
-      if (!patientId || !values.queueId) {
+      if (!patientId || !formData.queueId) {
         toast.error("Information patient ou file d'attente manquante");
         return;
       }
@@ -302,10 +302,10 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       const { data: queueEntry, error: queueError } = await supabase
         .from("queue_entries")
         .insert({
-          queue_id: values.queueId,
+          queue_id: formData.queueId,
           patient_id: patientId,
-          practitioner_id: values.practitionerId || null,
-          appointment_id: values.appointmentId || null,
+          practitioner_id: formData.practitionerId || null,
+          appointment_id: formData.appointmentId || null,
           arrival_time: new Date().toISOString(),
           status: "waiting",
         })
@@ -314,11 +314,11 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       if (queueError) throw queueError;
       
       // Si un rendez-vous est associé, mettre à jour son statut
-      if (values.appointmentId) {
+      if (formData.appointmentId) {
         const { error: appointmentError } = await supabase
           .from("appointments")
           .update({ status: "in_progress" })
-          .eq("id", values.appointmentId);
+          .eq("id", formData.appointmentId);
 
         if (appointmentError) {
           console.error("Erreur lors de la mise à jour du statut du rendez-vous:", appointmentError);
@@ -346,7 +346,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={onSubmit} className="space-y-4">
             <FormField
               control={form.control}
               name="queueId"
