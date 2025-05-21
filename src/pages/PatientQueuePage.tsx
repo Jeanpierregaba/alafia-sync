@@ -1,82 +1,68 @@
-
-import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { useQueueNotifications } from "@/hooks/useQueueNotifications";
-import { QueueEntry } from "@/hooks/useWaitingQueue";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Clock, Users, AlertTriangle, CheckCircle, Info, Clock4 } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
+import { Clock, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-
-// Type étendu pour inclure les informations de la file d'attente
-type QueueEntryWithQueue = QueueEntry & {
-  waiting_queues?: {
-    name: string;
-    description?: string | null;
-    average_wait_time: number;
-  };
-};
+import { useAuth } from "@/hooks/useAuth";
+import { QueueEntry } from "@/hooks/useWaitingQueue";
+import { useQueueNotifications } from "@/hooks/useQueueNotifications";
+import { toast } from "sonner";
 
 const PatientQueuePage = () => {
   const { user } = useAuth();
-  const [myQueueEntries, setMyQueueEntries] = useState<QueueEntryWithQueue[]>([]);
+  const [userQueueEntries, setUserQueueEntries] = useState<QueueEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [delayNotes, setDelayNotes] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
-  const { requestDelay, isSending } = useQueueNotifications();
+  const { requestDelay } = useQueueNotifications();
+  const [delayReason, setDelayReason] = useState("");
+  const [showDelayForm, setShowDelayForm] = useState(false);
+  const [processingDelayRequest, setProcessingDelayRequest] = useState(false);
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchMyQueueEntries = async () => {
+    const fetchUserQueueEntries = async () => {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
         const { data, error } = await supabase
           .from("queue_entries")
           .select(`
             *,
             waiting_queues:queue_id (
-              name, 
+              name,
               description,
               average_wait_time
             )
           `)
           .eq("patient_id", user.id)
-          .in("status", ["waiting", "in_progress", "delayed"]);
+          .in("status", ["waiting", "delayed", "in_progress"]);
 
         if (error) throw error;
-        
-        if (!data) {
-          setMyQueueEntries([]);
-          return;
-        }
-        
-        // Type cast pour s'assurer que le statut correspond au type attendu
-        const typedData = data.map(entry => ({
+
+        // Process data to match QueueEntry type
+        const processedData: QueueEntry[] = (data || []).map(entry => ({
           ...entry,
-          status: entry.status as 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'delayed'
+          status: entry.status as QueueEntry['status'],
+          patient: { 
+            first_name: user?.user_metadata?.first_name || null,
+            last_name: user?.user_metadata?.last_name || null
+          }
         }));
-        
-        setMyQueueEntries(typedData);
-      } catch (err: any) {
-        console.error("Erreur lors du chargement des files d'attente:", err);
-        toast.error("Impossible de charger vos files d'attente");
+
+        setUserQueueEntries(processedData);
+      } catch (err) {
+        console.error("Error fetching user queue entries:", err);
+        toast.error("Impossible de récupérer vos files d'attente actuelles");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchMyQueueEntries();
+    fetchUserQueueEntries();
 
-    // Configurer les mises à jour en temps réel
+    // Setup realtime subscription for queue updates
     const channel = supabase
-      .channel("my-queue-status")
+      .channel("queue-updates-for-patient")
       .on(
         "postgres_changes",
         {
@@ -86,8 +72,7 @@ const PatientQueuePage = () => {
           filter: `patient_id=eq.${user.id}`
         },
         (payload) => {
-          console.log("Mise à jour de la file d'attente:", payload);
-          fetchMyQueueEntries();
+          fetchUserQueueEntries();
         }
       )
       .subscribe();
@@ -97,97 +82,43 @@ const PatientQueuePage = () => {
     };
   }, [user]);
 
-  const handleDelayRequest = async () => {
-    if (!selectedEntryId) return;
-    
-    const success = await requestDelay(selectedEntryId, delayNotes);
-    
-    if (success) {
-      setDialogOpen(false);
-      setDelayNotes("");
+  const handleDelayRequest = async (entryId: string) => {
+    setProcessingDelayRequest(true);
+    try {
+      const success = await requestDelay(entryId, delayReason);
+      if (success) {
+        toast.success("Demande de délai envoyée");
+        setShowDelayForm(false);
+      } else {
+        toast.error("Erreur lors de la demande de délai");
+      }
+    } finally {
+      setProcessingDelayRequest(false);
     }
   };
 
-  const getEstimatedTime = (entry: QueueEntryWithQueue) => {
-    if (entry.estimated_wait_time) return entry.estimated_wait_time;
-    
-    // Estimation basée sur la position et le temps moyen
-    const averageWaitTime = entry.waiting_queues?.average_wait_time || 15;
-    const position = entry.position || 1;
-    
-    return position * averageWaitTime;
-  };
-
-  const getQueueStatusInfo = (entry: QueueEntry) => {
-    switch(entry.status) {
-      case 'waiting':
-        return {
-          title: "En attente",
-          description: "Vous êtes dans la file d'attente",
-          icon: Clock,
-          color: "text-blue-500",
-          bgColor: "bg-blue-100"
-        };
-      case 'in_progress':
-        return {
-          title: "En cours",
-          description: "C'est à votre tour !",
-          icon: CheckCircle,
-          color: "text-green-500",
-          bgColor: "bg-green-100"
-        };
-      case 'delayed':
-        return {
-          title: "Retardé",
-          description: "Vous avez signalé un retard",
-          icon: AlertTriangle,
-          color: "text-amber-500",
-          bgColor: "bg-amber-100"
-        };
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "waiting":
+        return <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200">En attente</Badge>;
+      case "in_progress":
+        return <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">En cours</Badge>;
+      case "delayed":
+        return <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-200">Retardé</Badge>;
       default:
-        return {
-          title: "Inconnu",
-          description: "Statut indéterminé",
-          icon: Info,
-          color: "text-gray-500",
-          bgColor: "bg-gray-100"
-        };
+        return <Badge variant="outline" className="bg-gray-100 text-gray-700">Inconnu</Badge>;
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Chargement de vos files d'attente...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!myQueueEntries.length) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Mes files d'attente</h2>
-          <p className="text-muted-foreground">
-            Consultez et gérez vos files d'attente.
-          </p>
-        </div>
-
-        <Card className="text-center py-12">
-          <CardContent>
-            <div className="mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-gray-100 mb-4">
-              <Clock className="h-8 w-8 text-muted-foreground" />
+      <div className="container mx-auto py-8">
+        <h1 className="text-2xl font-bold mb-6">Mes files d'attente</h1>
+        <Card>
+          <CardContent className="flex items-center justify-center py-10">
+            <div className="text-center">
+              <p className="text-muted-foreground">Chargement des données...</p>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Vous n'êtes dans aucune file d'attente</h3>
-            <p className="text-muted-foreground mb-6">
-              Vous n'avez pas de rendez-vous ou de consultation en attente actuellement.
-            </p>
-            <Button variant="outline" className="mx-auto">
-              Prendre rendez-vous
-            </Button>
           </CardContent>
         </Card>
       </div>
@@ -195,138 +126,93 @@ const PatientQueuePage = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Mes files d'attente</h2>
-        <p className="text-muted-foreground">
-          Consultez et gérez vos files d'attente actives.
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {myQueueEntries.map((entry) => {
-          const statusInfo = getQueueStatusInfo(entry);
-          const estimatedMinutes = getEstimatedTime(entry);
-          const queueName = entry.waiting_queues?.name || "File d'attente";
-          const progress = entry.position && entry.position > 0 
-            ? Math.max(0, 100 - (entry.position * 20)) 
-            : entry.status === 'in_progress' ? 90 : 0;
-
-          return (
-            <Card key={entry.id} className="overflow-hidden">
-              <CardHeader className={`${statusInfo.bgColor} border-b`}>
-                <div className="flex justify-between items-center">
-                  <Badge variant="outline" className={`${statusInfo.color} border-none bg-white bg-opacity-80`}>
-                    {statusInfo.title}
-                  </Badge>
-                  <statusInfo.icon className={`h-5 w-5 ${statusInfo.color}`} />
-                </div>
-                <CardTitle>{queueName}</CardTitle>
-                <CardDescription className="text-black text-opacity-70">
-                  {statusInfo.description}
-                </CardDescription>
+    <div className="container mx-auto py-8">
+      <h1 className="text-2xl font-bold mb-6">Mes files d'attente</h1>
+      {userQueueEntries.length === 0 ? (
+        <Card>
+          <CardContent className="flex items-center justify-center py-10">
+            <div className="text-center">
+              <p className="text-muted-foreground">Vous n'êtes dans aucune file d'attente pour le moment.</p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {userQueueEntries.map((entry) => (
+            <Card key={entry.id}>
+              <CardHeader>
+                <CardTitle>
+                  {entry.waiting_queues?.name || "File d'attente inconnue"}
+                </CardTitle>
               </CardHeader>
-              
-              <CardContent className="pt-6 space-y-4">
-                <div>
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>Progression</span>
-                    <span className="font-medium">{progress}%</span>
-                  </div>
-                  <Progress value={progress} className="h-2" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 text-center">
-                  <div className="rounded-lg border p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Position</p>
-                    <p className="text-2xl font-bold">
-                      {entry.status === 'in_progress' 
-                        ? 'C\'est à vous!' 
-                        : entry.position || '-'}
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">
+                      Statut: {getStatusBadge(entry.status)}
                     </p>
+                    {entry.status === "waiting" && (
+                      <p className="text-sm text-muted-foreground">
+                        Temps d'attente estimé: {entry.estimated_wait_time || "~15"} minutes
+                      </p>
+                    )}
+                    {entry.status === "delayed" && (
+                      <p className="text-sm text-muted-foreground">
+                        Vous avez signalé un retard.
+                      </p>
+                    )}
                   </div>
-                  <div className="rounded-lg border p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Temps estimé</p>
-                    <div className="flex items-center justify-center gap-1">
-                      <Clock4 className="h-4 w-4" />
-                      <p className="text-2xl font-bold">{estimatedMinutes} min</p>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    {entry.status === "waiting" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setShowDelayForm(entry.id)}
+                        disabled={showDelayForm === entry.id}
+                      >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Signaler un retard
+                      </Button>
+                    )}
+                    {entry.status === "in_progress" && (
+                      <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200">En consultation</Badge>
+                    )}
                   </div>
                 </div>
 
-                {entry.status === 'delayed' && entry.delay_notes && (
-                  <div className="rounded-lg border p-3 bg-amber-50">
-                    <p className="text-xs font-medium mb-1">Note de retard:</p>
-                    <p className="text-sm">{entry.delay_notes}</p>
+                {showDelayForm === entry.id && (
+                  <div className="mt-4">
+                    <textarea
+                      className="w-full border rounded-md p-2 text-sm"
+                      placeholder="Raison du retard (optionnel)"
+                      value={delayReason}
+                      onChange={(e) => setDelayReason(e.target.value)}
+                    />
+                    <div className="flex justify-end mt-2">
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setShowDelayForm(false)}
+                        disabled={processingDelayRequest}
+                      >
+                        Annuler
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="ml-2"
+                        onClick={() => handleDelayRequest(entry.id)}
+                        disabled={processingDelayRequest}
+                      >
+                        {processingDelayRequest ? "Envoi..." : "Envoyer"}
+                      </Button>
+                    </div>
                   </div>
                 )}
               </CardContent>
-              
-              <CardFooter className="border-t pt-4">
-                {entry.status === 'waiting' && (
-                  <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        className="w-full" 
-                        onClick={() => setSelectedEntryId(entry.id)}
-                      >
-                        <AlertTriangle className="mr-2 h-4 w-4" />
-                        Je serai en retard
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Signaler un retard</DialogTitle>
-                        <DialogDescription>
-                          Veuillez indiquer la raison de votre retard et une heure d'arrivée estimée.
-                        </DialogDescription>
-                      </DialogHeader>
-                      
-                      <div className="space-y-4 py-4">
-                        <Textarea 
-                          placeholder="Expliquez la raison de votre retard..." 
-                          className="min-h-[120px]"
-                          value={delayNotes}
-                          onChange={(e) => setDelayNotes(e.target.value)}
-                        />
-                      </div>
-                      
-                      <DialogFooter>
-                        <Button 
-                          variant="outline" 
-                          onClick={() => setDialogOpen(false)}
-                        >
-                          Annuler
-                        </Button>
-                        <Button 
-                          onClick={handleDelayRequest}
-                          disabled={isSending || !delayNotes.trim()}
-                        >
-                          {isSending ? "Envoi..." : "Signaler mon retard"}
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                )}
-                
-                {entry.status === 'delayed' && (
-                  <Button 
-                    variant="default" 
-                    className="w-full"
-                    onClick={() => {
-                      toast.error("Cette fonctionnalité n'est pas encore disponible");
-                    }}
-                  >
-                    <Users className="mr-2 h-4 w-4" />
-                    Je suis arrivé(e)
-                  </Button>
-                )}
-              </CardFooter>
             </Card>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

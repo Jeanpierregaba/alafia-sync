@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +40,7 @@ type Appointment = {
 
 type SearchResult = {
   id: string;
-  email: string;
+  email: string | null;
   fullName: string;
 };
 
@@ -114,12 +113,14 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         if (data) {
           for (const item of data) {
             if (item.practitioners && 
-                item.practitioners.profiles) {
-              const firstName = item.practitioners.profiles.first_name || '';
-              const lastName = item.practitioners.profiles.last_name || '';
+                typeof item.practitioners === 'object') {
+              // Safely access nested properties with type checking
+              const profiles = (item.practitioners as any).profiles;
+              const firstName = profiles && typeof profiles === 'object' ? profiles.first_name || '' : '';
+              const lastName = profiles && typeof profiles === 'object' ? profiles.last_name || '' : '';
               
               formattedPractitioners.push({
-                id: item.practitioners.id,
+                id: (item.practitioners as any).id,
                 name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
               });
             }
@@ -144,8 +145,8 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       // Recherche par email ou nom
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, email")
-        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
+        .select("id, first_name, last_name")
+        .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
         .eq("user_type", "patient");
 
       if (error) throw error;
@@ -155,13 +156,13 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       
       if (data) {
         for (const patient of data) {
-          if (patient && patient.id) {
+          if (patient && typeof patient === 'object' && patient.id) {
             const firstName = patient.first_name || '';
             const lastName = patient.last_name || '';
             
             results.push({
               id: patient.id,
-              email: patient.email || "",
+              email: null, // Email not available in profiles table
               fullName: `${firstName} ${lastName}`.trim() || 'Patient sans nom'
             });
           }
@@ -204,9 +205,9 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       
       if (data) {
         for (const apt of data) {
-          if (apt && apt.profiles) {
-            const firstName = apt.profiles.first_name || '';
-            const lastName = apt.profiles.last_name || '';
+          if (apt && apt.profiles && typeof apt.profiles === 'object') {
+            const firstName = (apt.profiles as any).first_name || '';
+            const lastName = (apt.profiles as any).last_name || '';
             const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
             
             formattedAppointments.push({

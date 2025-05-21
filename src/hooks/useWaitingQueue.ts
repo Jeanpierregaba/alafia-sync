@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -111,20 +110,20 @@ export const useWaitingQueue = (centerId?: string) => {
           return;
         }
         
-        // Type cast pour s'assurer que le statut correspond au type attendu
-        const typedData = data.map(entry => {
-          // Gérer les cas où les profiles est soit un objet, soit une erreur (dans ce cas, on fournit des valeurs par défaut)
-          const patient = typeof entry.profiles === 'object' && entry.profiles !== null 
-            ? {
-                first_name: entry.profiles.first_name,
-                last_name: entry.profiles.last_name
-              } 
-            : { first_name: null, last_name: null };
+        // Map data to our QueueEntry type with proper type handling for patient info
+        const typedData: QueueEntry[] = data.map(entry => {
+          // Default patient info if profiles data is missing or has an error
+          const patientInfo = {
+            first_name: entry.profiles && typeof entry.profiles === 'object' ? 
+              (entry.profiles as any).first_name || null : null,
+            last_name: entry.profiles && typeof entry.profiles === 'object' ? 
+              (entry.profiles as any).last_name || null : null
+          };
             
           return {
             ...entry,
-            status: entry.status as 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'delayed',
-            patient
+            status: entry.status as QueueEntry['status'],
+            patient: patientInfo
           };
         });
         
