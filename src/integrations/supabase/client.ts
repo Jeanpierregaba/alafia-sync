@@ -14,10 +14,17 @@ export const supabase = createClient<Database>(
   SUPABASE_PUBLISHABLE_KEY,
   {
     auth: {
-      storage: localStorage,
+      storage: typeof window !== 'undefined' ? localStorage : undefined,
       autoRefreshToken: true,
       persistSession: true,
       detectSessionInUrl: true
-    }
+    },
+    global: {
+      fetch: (...args) => {
+        console.log('Supabase fetch:', args[0]);
+        return fetch(...args);
+      },
+    },
+    debug: process.env.NODE_ENV === 'development'
   }
 );

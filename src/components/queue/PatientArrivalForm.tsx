@@ -252,12 +252,12 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     }
   }, [registrationType]);
 
-  // Completely simplified form submission using direct function calls
+  // Fixed form submission to avoid deep instantiation issues
   const onSubmit = form.handleSubmit((values) => {
-    void handlePatientRegistration(values);
+    handlePatientRegistration(values);
   });
 
-  // Function with clear, non-circular typing
+  // Separate function with clear typing to handle patient registration
   const handlePatientRegistration = async (formData: FormValues) => {
     setIsLoading(true);
     try {
