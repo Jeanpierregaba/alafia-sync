@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueueNotifications } from "@/hooks/useQueueNotifications";
@@ -47,13 +48,17 @@ const PatientQueuePage = () => {
             )
           `)
           .eq("patient_id", user.id)
-          .in("status", ["waiting", "in_progress", "delayed"])
-          .order("created_at", { ascending: false });
+          .in("status", ["waiting", "in_progress", "delayed"]);
 
         if (error) throw error;
         
+        if (!data) {
+          setMyQueueEntries([]);
+          return;
+        }
+        
         // Type cast pour s'assurer que le statut correspond au type attendu
-        const typedData = (data || []).map(entry => ({
+        const typedData = data.map(entry => ({
           ...entry,
           status: entry.status as 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'delayed'
         }));

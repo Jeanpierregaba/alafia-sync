@@ -83,7 +83,7 @@ export const useWaitingQueue = (centerId?: string) => {
     };
     
     fetchQueues();
-  }, [user, centerId]);
+  }, [user, centerId, activeQueueId]);
 
   useEffect(() => {
     if (!activeQueueId || !user) return;
@@ -96,22 +96,37 @@ export const useWaitingQueue = (centerId?: string) => {
           .from('queue_entries')
           .select(`
             *,
-            patient:patient_id (
+            profiles:patient_id (
               first_name,
               last_name
             )
           `)
           .eq('queue_id', activeQueueId)
-          .in('status', ['waiting', 'in_progress', 'delayed'])
-          .order('position', { ascending: true });
+          .in('status', ['waiting', 'in_progress', 'delayed']);
         
         if (error) throw error;
         
+        if (!data) {
+          setEntries([]);
+          return;
+        }
+        
         // Type cast pour s'assurer que le statut correspond au type attendu
-        const typedData = (data || []).map(entry => ({
-          ...entry,
-          status: entry.status as 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'delayed'
-        }));
+        const typedData = data.map(entry => {
+          // Gérer les cas où les profiles est soit un objet, soit une erreur (dans ce cas, on fournit des valeurs par défaut)
+          const patient = typeof entry.profiles === 'object' && entry.profiles !== null 
+            ? {
+                first_name: entry.profiles.first_name,
+                last_name: entry.profiles.last_name
+              } 
+            : { first_name: null, last_name: null };
+            
+          return {
+            ...entry,
+            status: entry.status as 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'delayed',
+            patient
+          };
+        });
         
         setEntries(typedData);
       } catch (err: any) {

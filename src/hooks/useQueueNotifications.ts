@@ -24,7 +24,6 @@ export function useQueueNotifications() {
         .select(`
           *,
           patient:patient_id (id),
-          profiles:patient_id (email),
           waiting_queues:queue_id (
             name
           )
@@ -45,8 +44,20 @@ export function useQueueNotifications() {
         return await sendAppointmentNotification(appointmentId, notifType);
       }
       
-      // S'assurer que nous avons l'email du patient
-      const patientEmail = entry.profiles?.email;
+      // Récupérer l'email du patient depuis les profiles
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, email')
+        .eq('id', entry.patient_id)
+        .single();
+      
+      if (profileError || !profileData) {
+        toast.error("Erreur: Impossible de récupérer les données du patient");
+        console.error(profileError);
+        return false;
+      }
+      
+      const patientEmail = profileData.email;
       
       if (!patientEmail) {
         toast.error("Erreur: Email du patient non trouvé");

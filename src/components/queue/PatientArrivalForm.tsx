@@ -114,12 +114,13 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         if (data) {
           for (const item of data) {
             if (item.practitioners && 
-                item.practitioners.profiles && 
-                item.practitioners.profiles.first_name && 
-                item.practitioners.profiles.last_name) {
+                item.practitioners.profiles) {
+              const firstName = item.practitioners.profiles.first_name || '';
+              const lastName = item.practitioners.profiles.last_name || '';
+              
               formattedPractitioners.push({
                 id: item.practitioners.id,
-                name: `${item.practitioners.profiles.first_name} ${item.practitioners.profiles.last_name}`
+                name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
               });
             }
           }
@@ -145,8 +146,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         .from("profiles")
         .select("id, first_name, last_name, email")
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`)
-        .eq("user_type", "patient")
-        .limit(5);
+        .eq("user_type", "patient");
 
       if (error) throw error;
       
@@ -156,10 +156,13 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       if (data) {
         for (const patient of data) {
           if (patient && patient.id) {
+            const firstName = patient.first_name || '';
+            const lastName = patient.last_name || '';
+            
             results.push({
               id: patient.id,
               email: patient.email || "",
-              fullName: `${patient.first_name || ""} ${patient.last_name || ""}`
+              fullName: `${firstName} ${lastName}`.trim() || 'Patient sans nom'
             });
           }
         }
@@ -192,8 +195,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         .eq("center_id", centerId)
         .gte("start_time", `${date}T00:00:00`)
         .lte("start_time", `${date}T23:59:59`)
-        .eq("status", "scheduled")
-        .order("start_time", { ascending: true });
+        .eq("status", "scheduled");
 
       if (error) throw error;
       
@@ -203,9 +205,13 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       if (data) {
         for (const apt of data) {
           if (apt && apt.profiles) {
+            const firstName = apt.profiles.first_name || '';
+            const lastName = apt.profiles.last_name || '';
+            const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
+            
             formattedAppointments.push({
               id: apt.id,
-              patientName: `${apt.profiles.first_name || ""} ${apt.profiles.last_name || ""}`,
+              patientName,
               patientId: apt.patient_id,
               startTime: new Date(apt.start_time).toLocaleTimeString([], {
                 hour: "2-digit",
@@ -238,19 +244,31 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       // Pour les patients qui arrivent sans rendez-vous
       if (values.registrationType === "walkIn" && values.patientEmail) {
         // Créer un compte patient temporaire si nécessaire
-        const { data: userData, error: userError } = await supabase.auth.admin.createUser({
-          email: values.patientEmail,
-          password: Math.random().toString(36).slice(-8), // Mot de passe aléatoire
-          email_confirm: true,
-          user_metadata: {
-            first_name: "Patient",
-            last_name: "Temporaire",
-            user_type: "patient",
-          },
-        });
-
-        if (userError) throw userError;
-        patientId = userData.user.id;
+        const { data: existingUser, error: existingUserError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', values.patientEmail)
+          .maybeSingle();
+        
+        if (!existingUserError && existingUser) {
+          patientId = existingUser.id;
+        } else {
+          // Créer un nouveau profil temporaire
+          const { data: newUser, error: newUserError } = await supabase
+            .from('profiles')
+            .insert({
+              id: crypto.randomUUID(),
+              email: values.patientEmail,
+              first_name: "Patient",
+              last_name: "Temporaire",
+              user_type: "patient"
+            })
+            .select('id')
+            .single();
+            
+          if (newUserError) throw newUserError;
+          patientId = newUser.id;
+        }
       }
       
       if (!patientId || !values.queueId) {
