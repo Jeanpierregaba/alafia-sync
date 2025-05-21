@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -27,12 +27,30 @@ type PatientArrivalFormProps = {
   onPatientRegistered?: () => void;
 };
 
+type Practitioner = {
+  id: string;
+  name: string;
+};
+
+type Appointment = {
+  id: string;
+  patientName: string;
+  patientId: string;
+  startTime: string;
+};
+
+type SearchResult = {
+  id: string;
+  email: string;
+  fullName: string;
+};
+
 export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArrivalFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [queues, setQueues] = useState<Array<{ id: string; name: string }>>([]);
-  const [practitioners, setPractitioners] = useState<Array<{ id: string; name: string }>>([]);
-  const [appointments, setAppointments] = useState<Array<{ id: string; patientName: string }>>([]);
-  const [searchResults, setSearchResults] = useState<Array<{ id: string; email: string; fullName: string }>>([]);
+  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -50,7 +68,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
   const registrationType = form.watch("registrationType");
 
   // Chargement des files d'attente disponibles pour le centre
-  useState(() => {
+  useEffect(() => {
     const fetchQueues = async () => {
       try {
         const { data, error } = await supabase
@@ -90,10 +108,22 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
 
         if (error) throw error;
         
-        const formattedPractitioners = (data || []).map((item) => ({
-          id: item.practitioners.id,
-          name: `${item.practitioners.profiles.first_name} ${item.practitioners.profiles.last_name}`,
-        }));
+        // Transformer les données pour obtenir le format souhaité
+        const formattedPractitioners: Practitioner[] = [];
+
+        if (data) {
+          for (const item of data) {
+            if (item.practitioners && 
+                item.practitioners.profiles && 
+                item.practitioners.profiles.first_name && 
+                item.practitioners.profiles.last_name) {
+              formattedPractitioners.push({
+                id: item.practitioners.id,
+                name: `${item.practitioners.profiles.first_name} ${item.practitioners.profiles.last_name}`
+              });
+            }
+          }
+        }
         
         setPractitioners(formattedPractitioners);
       } catch (err) {
@@ -103,14 +133,14 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     
     fetchQueues();
     fetchPractitioners();
-  }, [centerId]);
+  }, [centerId, form]);
 
   const searchPatient = async (query: string) => {
     if (query.length < 3) return;
     
     setIsSearching(true);
     try {
-      // Recherche par email
+      // Recherche par email ou nom
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name, email")
@@ -120,13 +150,22 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
 
       if (error) throw error;
       
-      setSearchResults(
-        (data || []).map((patient) => ({
-          id: patient.id,
-          email: patient.email || "",
-          fullName: `${patient.first_name} ${patient.last_name}`,
-        }))
-      );
+      // Transformer les données en SearchResults
+      const results: SearchResult[] = [];
+      
+      if (data) {
+        for (const patient of data) {
+          if (patient && patient.id) {
+            results.push({
+              id: patient.id,
+              email: patient.email || "",
+              fullName: `${patient.first_name || ""} ${patient.last_name || ""}`
+            });
+          }
+        }
+      }
+      
+      setSearchResults(results);
     } catch (err) {
       console.error("Erreur lors de la recherche du patient:", err);
       toast.error("Erreur lors de la recherche");
@@ -158,17 +197,26 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
 
       if (error) throw error;
       
-      setAppointments(
-        (data || []).map((appointment) => ({
-          id: appointment.id,
-          patientName: `${appointment.profiles.first_name} ${appointment.profiles.last_name}`,
-          patientId: appointment.patient_id,
-          startTime: new Date(appointment.start_time).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        }))
-      );
+      // Transformer les données en Appointments
+      const formattedAppointments: Appointment[] = [];
+      
+      if (data) {
+        for (const apt of data) {
+          if (apt && apt.profiles) {
+            formattedAppointments.push({
+              id: apt.id,
+              patientName: `${apt.profiles.first_name || ""} ${apt.profiles.last_name || ""}`,
+              patientId: apt.patient_id,
+              startTime: new Date(apt.start_time).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+              })
+            });
+          }
+        }
+      }
+      
+      setAppointments(formattedAppointments);
     } catch (err) {
       console.error("Erreur lors du chargement des rendez-vous:", err);
       toast.error("Impossible de charger les rendez-vous");
@@ -176,11 +224,11 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
   };
 
   // Rechercher les rendez-vous du jour au chargement
-  useState(() => {
+  useEffect(() => {
     if (registrationType === "appointment") {
       searchAppointments();
     }
-  }, []);
+  }, [registrationType]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true);

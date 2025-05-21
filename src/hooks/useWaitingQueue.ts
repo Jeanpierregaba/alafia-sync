@@ -62,7 +62,13 @@ export const useWaitingQueue = (centerId?: string) => {
         
         if (error) throw error;
         
-        setQueues(data || []);
+        // Type cast pour s'assurer que le statut correspond au type attendu
+        const typedData = (data || []).map(q => ({
+          ...q,
+          status: q.status as 'active' | 'inactive' | 'paused'
+        }));
+        
+        setQueues(typedData);
         
         // Set the first queue as active by default if available
         if (data && data.length > 0 && !activeQueueId) {
@@ -101,7 +107,13 @@ export const useWaitingQueue = (centerId?: string) => {
         
         if (error) throw error;
         
-        setEntries(data || []);
+        // Type cast pour s'assurer que le statut correspond au type attendu
+        const typedData = (data || []).map(entry => ({
+          ...entry,
+          status: entry.status as 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'delayed'
+        }));
+        
+        setEntries(typedData);
       } catch (err: any) {
         console.error('Error fetching queue entries:', err);
         setError(err);

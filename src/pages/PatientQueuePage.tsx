@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
-import { useWaitingQueue, QueueEntry } from "@/hooks/useWaitingQueue";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueueNotifications } from "@/hooks/useQueueNotifications";
+import { QueueEntry } from "@/hooks/useWaitingQueue";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +12,18 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+// Type étendu pour inclure les informations de la file d'attente
+type QueueEntryWithQueue = QueueEntry & {
+  waiting_queues?: {
+    name: string;
+    description?: string | null;
+    average_wait_time: number;
+  };
+};
+
 const PatientQueuePage = () => {
   const { user } = useAuth();
-  const [myQueueEntries, setMyQueueEntries] = useState<QueueEntry[]>([]);
+  const [myQueueEntries, setMyQueueEntries] = useState<QueueEntryWithQueue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [delayNotes, setDelayNotes] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -43,7 +51,14 @@ const PatientQueuePage = () => {
           .order("created_at", { ascending: false });
 
         if (error) throw error;
-        setMyQueueEntries(data || []);
+        
+        // Type cast pour s'assurer que le statut correspond au type attendu
+        const typedData = (data || []).map(entry => ({
+          ...entry,
+          status: entry.status as 'waiting' | 'in_progress' | 'completed' | 'cancelled' | 'no_show' | 'delayed'
+        }));
+        
+        setMyQueueEntries(typedData);
       } catch (err: any) {
         console.error("Erreur lors du chargement des files d'attente:", err);
         toast.error("Impossible de charger vos files d'attente");
@@ -88,11 +103,11 @@ const PatientQueuePage = () => {
     }
   };
 
-  const getEstimatedTime = (entry: QueueEntry) => {
+  const getEstimatedTime = (entry: QueueEntryWithQueue) => {
     if (entry.estimated_wait_time) return entry.estimated_wait_time;
     
     // Estimation basée sur la position et le temps moyen
-    const averageWaitTime = (entry as any).waiting_queues?.average_wait_time || 15;
+    const averageWaitTime = entry.waiting_queues?.average_wait_time || 15;
     const position = entry.position || 1;
     
     return position * averageWaitTime;
@@ -187,7 +202,7 @@ const PatientQueuePage = () => {
         {myQueueEntries.map((entry) => {
           const statusInfo = getQueueStatusInfo(entry);
           const estimatedMinutes = getEstimatedTime(entry);
-          const queueName = (entry as any).waiting_queues?.name || "File d'attente";
+          const queueName = entry.waiting_queues?.name || "File d'attente";
           const progress = entry.position && entry.position > 0 
             ? Math.max(0, 100 - (entry.position * 20)) 
             : entry.status === 'in_progress' ? 90 : 0;

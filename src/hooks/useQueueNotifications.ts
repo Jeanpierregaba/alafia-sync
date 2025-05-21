@@ -23,10 +23,8 @@ export function useQueueNotifications() {
         .from('queue_entries')
         .select(`
           *,
-          patient:patient_id (
-            id,
-            email
-          ),
+          patient:patient_id (id),
+          profiles:patient_id (email),
           waiting_queues:queue_id (
             name
           )
@@ -47,6 +45,14 @@ export function useQueueNotifications() {
         return await sendAppointmentNotification(appointmentId, notifType);
       }
       
+      // S'assurer que nous avons l'email du patient
+      const patientEmail = entry.profiles?.email;
+      
+      if (!patientEmail) {
+        toast.error("Erreur: Email du patient non trouvé");
+        return false;
+      }
+      
       // Sinon, enregistrer une notification directement
       const { error: notifError } = await supabase
         .from('notification_logs')
@@ -54,7 +60,7 @@ export function useQueueNotifications() {
           appointment_id: appointmentId || null,
           notification_type: `queue_${type}`,
           status: 'sent',
-          recipient: entry.patient.email,
+          recipient: patientEmail,
           content: generateNotificationContent(type, entry)
         });
       
