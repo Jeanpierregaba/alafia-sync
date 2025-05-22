@@ -43,7 +43,7 @@ export function NewConversationDialog({
     isUrgent: boolean;
   }) => {
     // Don't proceed if recipient ID is invalid
-    if (!recipientId || recipientId === 'select-placeholder' || recipientId === 'no-results-found') {
+    if (!recipientId || recipientId === 'select-placeholder' || recipientId === 'no-recipients') {
       toast.error("Veuillez sélectionner un destinataire valide");
       return;
     }
@@ -63,8 +63,8 @@ export function NewConversationDialog({
       });
       
       // Safely check if we have a valid conversation ID
-      if (result?.conversation && typeof result.conversation === 'object' && 'id' in result.conversation) {
-        onConversationCreated(result.conversation.id as string);
+      if (result?.conversation && typeof result.conversation === 'object' && 'id' in result.conversation && result.conversation.id) {
+        onConversationCreated(result.conversation.id.toString());
         onOpenChange(false);
       } else {
         throw new Error("Failed to create conversation");

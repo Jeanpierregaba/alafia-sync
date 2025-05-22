@@ -134,16 +134,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         console.log("Profile data from DB:", profileData);
         
-        // Combine metadata with profile data if available
-        const userProfile = {
+        // Type guard for profile data
+        const isValidProfileData = (data: any): data is {
+          id: string;
+          first_name: string | null;
+          last_name: string | null;
+          avatar_url: string | null;
+          user_type: 'patient' | 'doctor' | 'facility' | 'admin';
+          created_at: string;
+          updated_at: string;
+        } => {
+          return data && typeof data === 'object' && 'id' in data;
+        };
+        
+        // Create default values or use profile data
+        const defaultProfile = {
           id: userId,
-          first_name: profileData?.first_name || userMetadata?.first_name || null,
-          last_name: profileData?.last_name || userMetadata?.last_name || null,
-          avatar_url: profileData?.avatar_url || userMetadata?.avatar_url || null,
-          user_type: profileData?.user_type || userMetadata?.user_type || 'patient',
-          created_at: profileData?.created_at || new Date().toISOString(),
-          updated_at: profileData?.updated_at || new Date().toISOString()
-        } as UserProfile;
+          first_name: null,
+          last_name: null,
+          avatar_url: null,
+          user_type: 'patient' as const,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        // Combine metadata with profile data if available
+        const userProfile: UserProfile = {
+          ...defaultProfile,
+          ...(isValidProfileData(profileData) ? profileData : {}),
+          first_name: isValidProfileData(profileData) ? profileData.first_name : (userMetadata?.first_name || null),
+          last_name: isValidProfileData(profileData) ? profileData.last_name : (userMetadata?.last_name || null),
+          avatar_url: isValidProfileData(profileData) ? profileData.avatar_url : (userMetadata?.avatar_url || null),
+          user_type: isValidProfileData(profileData) ? profileData.user_type : (userMetadata?.user_type || 'patient')
+        };
         
         console.log('User profile created:', userProfile);
         setProfile(userProfile);
@@ -228,7 +251,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         signUp,
         signIn,
-        signOut, // Assurez-vous que cette fonction est bien exportée
+        signOut,
         isAdmin
       }}
     >
