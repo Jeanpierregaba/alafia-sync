@@ -1,32 +1,10 @@
 
-import { useState, useEffect, createContext, useContext, ReactNode } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-
-export type UserProfile = {
-  id: string;
-  first_name: string | null;
-  last_name: string | null;
-  avatar_url: string | null;
-  user_type: 'patient' | 'doctor' | 'facility' | 'admin';
-  created_at: string;
-  updated_at: string;
-};
-
-type AuthContextType = {
-  user: User | null;
-  session: Session | null;
-  profile: UserProfile | null;
-  isLoading: boolean;
-  signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
-  signIn: (email: string, password: string, isAdminLogin?: boolean) => Promise<void>;
-  signOut: () => Promise<void>; // Assurez-vous que cette fonction est bien définie
-  isAdmin: boolean;
-};
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import AuthContext, { UserProfile } from "@/contexts/AuthContext";
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
@@ -260,10 +238,4 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth doit être utilisé avec AuthProvider");
-  }
-  return context;
-};
+export default AuthProvider;

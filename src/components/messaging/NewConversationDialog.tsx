@@ -63,7 +63,10 @@ export function NewConversationDialog({
       });
       
       // Safely check if we have a valid conversation ID
-      if (result?.conversation && typeof result.conversation === 'object' && 'id' in result.conversation && result.conversation.id) {
+      if (result?.conversation && 
+          typeof result.conversation === 'object' && 
+          'id' in result.conversation && 
+          result.conversation.id) {
         onConversationCreated(result.conversation.id.toString());
         onOpenChange(false);
       } else {
