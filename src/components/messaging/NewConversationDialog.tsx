@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useMessaging } from '@/hooks/useMessaging';
 import { toast } from 'sonner';
 import {
@@ -42,6 +42,12 @@ export function NewConversationDialog({
     message: string;
     isUrgent: boolean;
   }) => {
+    // Don't proceed if recipient ID is invalid
+    if (!recipientId || recipientId === 'select-placeholder' || recipientId === 'no-results-found') {
+      toast.error("Veuillez sélectionner un destinataire valide");
+      return;
+    }
+    
     setIsCreating(true);
     
     try {

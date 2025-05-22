@@ -31,7 +31,7 @@ export function ConversationForm({ onSubmit, isCreating, onCancel }: Conversatio
   const [isUrgent, setIsUrgent] = useState(false);
 
   const handleSubmit = () => {
-    if (!selectedRecipient || message.trim() === '') return;
+    if (!selectedRecipient || selectedRecipient === 'select-placeholder' || selectedRecipient === 'no-results-found' || message.trim() === '') return;
 
     onSubmit({
       recipientType,
@@ -103,6 +103,8 @@ export function ConversationForm({ onSubmit, isCreating, onCancel }: Conversatio
           onClick={handleSubmit}
           disabled={
             !selectedRecipient || 
+            selectedRecipient === 'select-placeholder' || 
+            selectedRecipient === 'no-results-found' || 
             message.trim() === '' || 
             isCreating
           }

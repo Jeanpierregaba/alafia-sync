@@ -33,7 +33,7 @@ export function RecipientSelector({
         {recipientType === 'practitioner' ? 'Médecin' : 'Centre de santé'}
       </Label>
       <Select
-        value={selectedRecipient}
+        value={selectedRecipient || "select-placeholder"}
         onValueChange={onSelectRecipient}
         disabled={isLoading}
       >
