@@ -62,8 +62,9 @@ export function NewConversationDialog({
         }
       });
       
-      if (result?.conversation?.id) {
-        onConversationCreated(result.conversation.id);
+      // Safely check if we have a valid conversation ID
+      if (result?.conversation && typeof result.conversation === 'object' && 'id' in result.conversation) {
+        onConversationCreated(result.conversation.id as string);
         onOpenChange(false);
       } else {
         throw new Error("Failed to create conversation");

@@ -38,31 +38,26 @@ export function useConversationRecipients(recipientType: RecipientType) {
       }
       
       return data.map(practitioner => {
+        // Defensive checking
         if (!practitioner) return null;
         
-        if (typeof practitioner !== 'object' || !practitioner.hasOwnProperty('id') || 
-            !practitioner.hasOwnProperty('speciality') || !practitioner.hasOwnProperty('profiles')) {
-          console.warn('Practitioner object missing required properties:', practitioner);
-          return null;
+        // Type-safe property checking
+        const practId = 'id' in practitioner ? String(practitioner.id || 'unknown-id') : 'unknown-id';
+        const speciality = 'speciality' in practitioner ? (practitioner.speciality as string || 'Non spécifié') : 'Non spécifié';
+        const practProfiles = 'profiles' in practitioner ? practitioner.profiles : null;
+        
+        // Handle the profiles data safely
+        let firstName = '';
+        let lastName = '';
+        
+        if (Array.isArray(practProfiles) && practProfiles.length > 0 && practProfiles[0]) {
+          const profile = practProfiles[0];
+          firstName = 'first_name' in profile ? (profile.first_name as string || '') : '';
+          lastName = 'last_name' in profile ? (profile.last_name as string || '') : '';
         }
-        
-        const profiles = practitioner.profiles;
-        
-        if (!Array.isArray(profiles) || !profiles[0]) {
-          return {
-            id: String(practitioner.id || 'unknown-id'), // Ensure we never have an empty string
-            name: `Unknown (${practitioner.speciality || 'Non spécifié'})`,
-            type: 'practitioner' as const
-          };
-        }
-        
-        const profile = profiles[0];
-        const firstName = profile?.first_name || '';
-        const lastName = profile?.last_name || '';
-        const speciality = practitioner.speciality || 'Non spécifié';
         
         return {
-          id: String(practitioner.id || 'unknown-id'), // Ensure we never have an empty string
+          id: practId, // Ensure we never have an empty string
           name: `${firstName} ${lastName} (${speciality})`.trim() || 'Unknown Name',
           type: 'practitioner' as const
         };
@@ -92,14 +87,13 @@ export function useConversationRecipients(recipientType: RecipientType) {
       return data.map(center => {
         if (!center) return null;
         
-        if (typeof center !== 'object' || !center.hasOwnProperty('id') || !center.hasOwnProperty('name')) {
-          console.warn('Health center object missing required properties:', center);
-          return null;
-        }
+        // Type-safe property checking
+        const centerId = 'id' in center ? String(center.id || 'unknown-id') : 'unknown-id';
+        const centerName = 'name' in center ? (center.name as string || 'Centre sans nom') : 'Centre sans nom';
         
         return {
-          id: String(center.id || 'unknown-id'), // Ensure we never have an empty string
-          name: center.name || 'Centre sans nom',
+          id: centerId, // Ensure we never have an empty string
+          name: centerName,
           type: 'health_center' as const
         };
       }).filter(Boolean) as RecipientInfo[];

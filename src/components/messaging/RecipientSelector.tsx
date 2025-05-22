@@ -53,13 +53,13 @@ export function RecipientSelector({
               recipients.map(recipient => (
                 <SelectItem 
                   key={recipient.id} 
-                  value={recipient.id || "placeholder-value"} // Ensure value is never empty
+                  value={recipient.id || "unknown-id"} // Ensure value is never empty
                 >
                   {recipient.name}
                 </SelectItem>
               ))
             ) : (
-              <SelectItem value="no-results-found" disabled>
+              <SelectItem value="no-recipients" disabled>
                 Aucun résultat trouvé
               </SelectItem>
             )}
