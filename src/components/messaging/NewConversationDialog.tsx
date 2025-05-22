@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface NewConversationDialogProps {
   open: boolean;
@@ -86,8 +87,13 @@ export function NewConversationDialog({
         throw error;
       }
       
-      // Corrigé: Ajout d'une vérification pour s'assurer que data est un tableau
-      return (Array.isArray(data) ? data : []).map(practitioner => {
+      // Ajout de vérification pour s'assurer que data est un tableau et pas une erreur
+      if (!data || !Array.isArray(data)) {
+        console.error('Unexpected data format from practitioners query:', data);
+        return [];
+      }
+      
+      return data.map(practitioner => {
         // Vérifier si practitioner et ses propriétés sont définis
         if (!practitioner) return null;
         
@@ -118,8 +124,13 @@ export function NewConversationDialog({
         throw error;
       }
       
-      // Corrigé: Ajout d'une vérification pour s'assurer que data est un tableau
-      return (Array.isArray(data) ? data : []).map(center => {
+      // Ajout de vérification pour s'assurer que data est un tableau et pas une erreur
+      if (!data || !Array.isArray(data)) {
+        console.error('Unexpected data format from health centers query:', data);
+        return [];
+      }
+      
+      return data.map(center => {
         // Vérifier si center et ses propriétés sont définis
         if (!center) return null;
         
@@ -146,7 +157,10 @@ export function NewConversationDialog({
     
     try {
       const recipient = recipients.find(r => r.id === selectedRecipient);
-      if (!recipient) throw new Error('Recipient not found');
+      if (!recipient) {
+        toast.error("Destinataire non trouvé");
+        return;
+      }
       
       const result = await createConversation.mutateAsync({
         title: title.trim() || undefined,
@@ -167,6 +181,7 @@ export function NewConversationDialog({
       }
     } catch (error) {
       console.error('Error creating conversation:', error);
+      toast.error("Impossible de créer la conversation");
     } finally {
       setIsCreating(false);
     }

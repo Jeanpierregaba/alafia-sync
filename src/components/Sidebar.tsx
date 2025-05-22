@@ -92,13 +92,13 @@ const SidebarLink = ({
 
 const Sidebar = ({ open, setOpen }: SidebarProps) => {
   const { pathname } = useLocation();
-  const { user, isAdmin, signOut } = useAuth(); // Utiliser signOut au lieu de logout
+  const { user, isAdmin, signOut } = useAuth();
   const [loading, setLoading] = React.useState(false);
 
   const handleLogout = async () => {
     setLoading(true);
     try {
-      await signOut(); // Utiliser signOut au lieu de logout
+      await signOut();
     } finally {
       setLoading(false);
     }

@@ -88,17 +88,23 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
   useEffect(() => {
     const fetchQueues = async () => {
       try {
-        // Corriger l'erreur de typage pour la comparaison center_id et status
         const { data, error } = await supabase
           .from("waiting_queues")
           .select("id, name, status")
-          .eq("center_id", centerId as any)  // Utiliser any pour contourner l'erreur de type
-          .eq("status", "active" as any);    // Utiliser any pour contourner l'erreur de type
+          .eq("center_id", centerId)
+          .eq("status", "active");
 
         if (error) throw error;
         
-        // Assurons-nous que data est défini et formattons-le correctement
-        const formattedQueues = (Array.isArray(data) ? data : []).map(queue => {
+        // Vérifier si data est défini et est un tableau
+        if (!data || !Array.isArray(data)) {
+          console.error('Unexpected data format from waiting_queues query:', data);
+          setQueues([]);
+          return;
+        }
+        
+        // Formattons le correctement
+        const formattedQueues = data.map(queue => {
           return {
             id: queue?.id || '',
             name: queue?.name || 'File sans nom'
@@ -131,27 +137,32 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
               )
             )
           `)
-          .eq("center_id", centerId as any);  // Utiliser any pour contourner l'erreur de type
+          .eq("center_id", centerId);
 
         if (error) throw error;
+        
+        // Vérifier si data est défini et est un tableau
+        if (!data || !Array.isArray(data)) {
+          console.error('Unexpected data format from practitioner_centers query:', data);
+          setPractitioners([]);
+          return;
+        }
         
         // Transformer les données pour obtenir le format souhaité
         const formattedPractitioners: Practitioner[] = [];
 
-        if (Array.isArray(data)) {
-          for (const item of data) {
-            if (item?.practitioners && typeof item.practitioners === 'object') {
-              const practitioner = item.practitioners;
-              if (!practitioner) continue;
-              
-              const profiles = practitioner.profiles;
-              const { firstName, lastName } = extractProfileData(profiles);
-              
-              formattedPractitioners.push({
-                id: practitioner.id || '',
-                name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
-              });
-            }
+        for (const item of data) {
+          if (item?.practitioners && typeof item.practitioners === 'object') {
+            const practitioner = item.practitioners;
+            if (!practitioner) continue;
+            
+            const profiles = practitioner.profiles;
+            const { firstName, lastName } = extractProfileData(profiles);
+            
+            formattedPractitioners.push({
+              id: practitioner.id || '',
+              name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
+            });
           }
         }
         
@@ -179,21 +190,26 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
 
       if (error) throw error;
       
+      // Vérifier si data est défini et est un tableau
+      if (!data || !Array.isArray(data)) {
+        console.error('Unexpected data format from profiles query:', data);
+        setSearchResults([]);
+        return;
+      }
+      
       // Transformer les données en SearchResults
       const results: SearchResult[] = [];
       
-      if (data) {
-        for (const patient of data) {
-          if (patient && typeof patient === 'object' && patient.id) {
-            const firstName = patient.first_name || '';
-            const lastName = patient.last_name || '';
-            
-            results.push({
-              id: patient.id,
-              email: null,
-              fullName: `${firstName} ${lastName}`.trim() || 'Patient sans nom'
-            });
-          }
+      for (const patient of data) {
+        if (patient && typeof patient === 'object' && patient.id) {
+          const firstName = patient.first_name || '';
+          const lastName = patient.last_name || '';
+          
+          results.push({
+            id: patient.id,
+            email: null,
+            fullName: `${firstName} ${lastName}`.trim() || 'Patient sans nom'
+          });
         }
       }
       
@@ -228,24 +244,32 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
 
       if (error) throw error;
       
+      // Vérifier si data est défini et est un tableau
+      if (!data || !Array.isArray(data)) {
+        console.error('Unexpected data format from appointments query:', data);
+        setAppointments([]);
+        return;
+      }
+      
       // Transformer les données en Appointments
       const formattedAppointments: Appointment[] = [];
       
-      if (data) {
-        for (const apt of data) {
-          const { firstName, lastName } = extractProfileData(apt.profiles);
-          const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
-            
-          formattedAppointments.push({
-            id: apt.id,
-            patientName,
-            patientId: apt.patient_id,
-            startTime: new Date(apt.start_time).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit"
-            })
-          });
-        }
+      for (const apt of data) {
+        if (!apt) continue;
+        
+        const profiles = apt.profiles;
+        const { firstName, lastName } = extractProfileData(profiles);
+        const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
+          
+        formattedAppointments.push({
+          id: apt.id || '',
+          patientName,
+          patientId: apt.patient_id || '',
+          startTime: apt.start_time ? new Date(apt.start_time).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+          }) : ''
+        });
       }
       
       setAppointments(formattedAppointments);
@@ -275,31 +299,43 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       
       // Pour les patients qui arrivent sans rendez-vous
       if (formData.registrationType === "walkIn" && formData.patientEmail) {
-        // Créer un compte patient temporaire si nécessaire
-        const { data: existingUser, error: existingUserError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', formData.patientEmail)
-          .maybeSingle();
-        
-        if (!existingUserError && existingUser) {
-          patientId = existingUser.id;
-        } else {
-          // Créer un nouveau profil temporaire
-          const { data: newUser, error: newUserError } = await supabase
+        try {
+          // Créer un compte patient temporaire si nécessaire
+          const { data: existingUser, error: existingUserError } = await supabase
             .from('profiles')
-            .insert({
-              id: crypto.randomUUID(),
-              email: formData.patientEmail,
-              first_name: "Patient",
-              last_name: "Temporaire",
-              user_type: "patient"
-            })
             .select('id')
-            .single();
+            .eq('email', formData.patientEmail)
+            .maybeSingle();
+          
+          if (!existingUserError && existingUser) {
+            patientId = existingUser.id;
+          } else {
+            // Créer un nouveau profil temporaire avec un cast pour éviter l'erreur TypeScript
+            const { data: newUser, error: newUserError } = await supabase
+              .from('profiles')
+              .insert({
+                id: crypto.randomUUID(),
+                email: formData.patientEmail,
+                first_name: "Patient",
+                last_name: "Temporaire",
+                user_type: "patient" as any // Cast pour éviter l'erreur TypeScript
+              } as any)
+              .select('id')
+              .single();
+              
+            if (newUserError) throw newUserError;
             
-          if (newUserError) throw newUserError;
-          patientId = newUser.id;
+            // Vérifier si newUser existe et a un id avant de l'assigner
+            if (newUser && newUser.id) {
+              patientId = newUser.id;
+            } else {
+              throw new Error("Failed to create patient profile");
+            }
+          }
+        } catch (error) {
+          console.error("Erreur lors de la création/recherche du profil temporaire:", error);
+          toast.error("Impossible de créer un profil temporaire");
+          return;
         }
       }
       
@@ -318,7 +354,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
           appointment_id: formData.appointmentId || null,
           arrival_time: new Date().toISOString(),
           status: "waiting",
-        })
+        } as any)
         .select();
 
       if (queueError) throw queueError;
@@ -327,7 +363,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       if (formData.appointmentId) {
         const { error: appointmentError } = await supabase
           .from("appointments")
-          .update({ status: "in_progress" })
+          .update({ status: "in_progress" as any })
           .eq("id", formData.appointmentId);
 
         if (appointmentError) {
