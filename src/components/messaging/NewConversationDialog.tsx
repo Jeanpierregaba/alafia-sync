@@ -55,7 +55,7 @@ export function NewConversationDialog({
   const [selectedRecipient, setSelectedRecipient] = useState<string>('');
   const [isCreating, setIsCreating] = useState(false);
   
-  // Réinitialiser le formulaire lorsqu'il est fermé
+  // Reset the form when it's closed
   useEffect(() => {
     if (!open) {
       setTitle('');
@@ -66,7 +66,7 @@ export function NewConversationDialog({
     }
   }, [open]);
   
-  // Récupérer les médecins
+  // Fetch practitioners
   const { data: practitioners, isLoading: loadingPractitioners } = useQuery({
     queryKey: ['practitioners'],
     queryFn: async () => {
@@ -87,20 +87,21 @@ export function NewConversationDialog({
         throw error;
       }
       
-      // Ajout de vérification pour s'assurer que data est un tableau et pas une erreur
+      // Check if data is a valid array and not an error
       if (!data || !Array.isArray(data)) {
         console.error('Unexpected data format from practitioners query:', data);
         return [];
       }
       
       return data.map(practitioner => {
-        // Vérifier si practitioner et ses propriétés sont définis
+        // Check if practitioner exists before accessing properties
         if (!practitioner) return null;
         
+        // Safe access to profiles with proper type checking
         const profiles = practitioner.profiles || {};
-        const firstName = profiles.first_name || '';
-        const lastName = profiles.last_name || '';
-        const speciality = practitioner.speciality || 'Non spécifié';
+        const firstName = typeof profiles.first_name === 'string' ? profiles.first_name : '';
+        const lastName = typeof profiles.last_name === 'string' ? profiles.last_name : '';
+        const speciality = typeof practitioner.speciality === 'string' ? practitioner.speciality : 'Non spécifié';
         
         return {
           id: practitioner.id || '',
@@ -111,7 +112,7 @@ export function NewConversationDialog({
     }
   });
   
-  // Récupérer les centres de santé
+  // Fetch health centers
   const { data: healthCenters, isLoading: loadingCenters } = useQuery({
     queryKey: ['healthCenters'],
     queryFn: async () => {
@@ -124,14 +125,14 @@ export function NewConversationDialog({
         throw error;
       }
       
-      // Ajout de vérification pour s'assurer que data est un tableau et pas une erreur
+      // Check if data is a valid array and not an error
       if (!data || !Array.isArray(data)) {
         console.error('Unexpected data format from health centers query:', data);
         return [];
       }
       
       return data.map(center => {
-        // Vérifier si center et ses propriétés sont définis
+        // Check if center exists before accessing properties
         if (!center) return null;
         
         return {
@@ -143,13 +144,13 @@ export function NewConversationDialog({
     }
   });
   
-  // Filtrer les destinataires en fonction du type sélectionné
+  // Filter recipients based on the selected type
   const recipients: RecipientInfo[] = [
     ...(recipientType === 'practitioner' && practitioners ? practitioners : []),
     ...(recipientType === 'health_center' && healthCenters ? healthCenters : [])
   ];
   
-  // Créer une nouvelle conversation
+  // Create a new conversation
   const handleCreateConversation = async () => {
     if (!selectedRecipient || !message.trim()) return;
     

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -84,36 +83,37 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
 
   const registrationType = form.watch("registrationType");
 
-  // Chargement des files d'attente disponibles pour le centre
+  // Load available queues for the center
   useEffect(() => {
     const fetchQueues = async () => {
       try {
         const { data, error } = await supabase
           .from("waiting_queues")
           .select("id, name, status")
-          .eq("center_id", centerId)
-          .eq("status", "active");
+          .eq("center_id", centerId as any) // Use type assertion for string value
+          .eq("status", "active" as any);   // Use type assertion for string value
 
         if (error) throw error;
         
-        // Vérifier si data est défini et est un tableau
+        // Check if data is defined and is an array
         if (!data || !Array.isArray(data)) {
           console.error('Unexpected data format from waiting_queues query:', data);
           setQueues([]);
           return;
         }
         
-        // Formattons le correctement
+        // Format the data correctly
         const formattedQueues = data.map(queue => {
+          if (!queue) return { id: '', name: 'Unknown queue' };
           return {
-            id: queue?.id || '',
-            name: queue?.name || 'File sans nom'
+            id: queue.id || '',
+            name: queue.name || 'File sans nom'
           };
         });
         
         setQueues(formattedQueues);
         
-        // Définir la première file comme valeur par défaut
+        // Set the first queue as default value
         if (formattedQueues.length > 0) {
           form.setValue("queueId", formattedQueues[0].id);
         }
@@ -137,33 +137,35 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
               )
             )
           `)
-          .eq("center_id", centerId);
+          .eq("center_id", centerId as any); // Use type assertion for string value
 
         if (error) throw error;
         
-        // Vérifier si data est défini et est un tableau
+        // Check if data is defined and is an array
         if (!data || !Array.isArray(data)) {
           console.error('Unexpected data format from practitioner_centers query:', data);
           setPractitioners([]);
           return;
         }
         
-        // Transformer les données pour obtenir le format souhaité
+        // Transform data to get the desired format
         const formattedPractitioners: Practitioner[] = [];
 
         for (const item of data) {
-          if (item?.practitioners && typeof item.practitioners === 'object') {
-            const practitioner = item.practitioners;
-            if (!practitioner) continue;
-            
-            const profiles = practitioner.profiles;
-            const { firstName, lastName } = extractProfileData(profiles);
-            
-            formattedPractitioners.push({
-              id: practitioner.id || '',
-              name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
-            });
+          if (!item || !item.practitioners || typeof item.practitioners !== 'object') {
+            continue;
           }
+          
+          const practitioner = item.practitioners;
+          if (!practitioner) continue;
+          
+          const profiles = practitioner.profiles;
+          const { firstName, lastName } = extractProfileData(profiles);
+          
+          formattedPractitioners.push({
+            id: practitioner.id || '',
+            name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
+          });
         }
         
         setPractitioners(formattedPractitioners);
@@ -181,23 +183,23 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     
     setIsSearching(true);
     try {
-      // Recherche par nom
+      // Search by name
       const { data, error } = await supabase
         .from("profiles")
         .select("id, first_name, last_name")
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
-        .eq("user_type", "patient");
+        .eq("user_type", "patient" as any); // Use type assertion for string value
 
       if (error) throw error;
       
-      // Vérifier si data est défini et est un tableau
+      // Check if data is defined and is an array
       if (!data || !Array.isArray(data)) {
         console.error('Unexpected data format from profiles query:', data);
         setSearchResults([]);
         return;
       }
       
-      // Transformer les données en SearchResults
+      // Transform data to SearchResults
       const results: SearchResult[] = [];
       
       for (const patient of data) {
@@ -237,21 +239,21 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
             last_name
           )
         `)
-        .eq("center_id", centerId)
+        .eq("center_id", centerId as any) // Use type assertion for string value
         .gte("start_time", `${date}T00:00:00`)
         .lte("start_time", `${date}T23:59:59`)
-        .eq("status", "scheduled");
+        .eq("status", "scheduled" as any); // Use type assertion for string value
 
       if (error) throw error;
       
-      // Vérifier si data est défini et est un tableau
+      // Check if data is defined and is an array
       if (!data || !Array.isArray(data)) {
         console.error('Unexpected data format from appointments query:', data);
         setAppointments([]);
         return;
       }
       
-      // Transformer les données en Appointments
+      // Transform data to Appointments
       const formattedAppointments: Appointment[] = [];
       
       for (const apt of data) {
@@ -279,7 +281,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     }
   };
 
-  // Rechercher les rendez-vous du jour au chargement
+  // Search for appointments when registration type changes to "appointment"
   useEffect(() => {
     if (registrationType === "appointment") {
       searchAppointments();
@@ -297,35 +299,37 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
     try {
       let patientId = formData.patientId;
       
-      // Pour les patients qui arrivent sans rendez-vous
+      // For walk-in patients
       if (formData.registrationType === "walkIn" && formData.patientEmail) {
         try {
-          // Créer un compte patient temporaire si nécessaire
+          // Create temporary patient account if needed
           const { data: existingUser, error: existingUserError } = await supabase
             .from('profiles')
             .select('id')
-            .eq('email', formData.patientEmail)
+            .eq('email', formData.patientEmail as any) // Use type assertion for string value
             .maybeSingle();
           
           if (!existingUserError && existingUser) {
             patientId = existingUser.id;
           } else {
-            // Créer un nouveau profil temporaire avec un cast pour éviter l'erreur TypeScript
+            // Create a new temporary profile with a type assertion for TypeScript
+            const newUserData = {
+              id: crypto.randomUUID(),
+              email: formData.patientEmail,
+              first_name: "Patient",
+              last_name: "Temporaire",
+              user_type: "patient" 
+            };
+
             const { data: newUser, error: newUserError } = await supabase
               .from('profiles')
-              .insert({
-                id: crypto.randomUUID(),
-                email: formData.patientEmail,
-                first_name: "Patient",
-                last_name: "Temporaire",
-                user_type: "patient" as any // Cast pour éviter l'erreur TypeScript
-              } as any)
+              .insert(newUserData as any) // Use type assertion to avoid TypeScript errors
               .select('id')
               .single();
               
             if (newUserError) throw newUserError;
             
-            // Vérifier si newUser existe et a un id avant de l'assigner
+            // Check if newUser exists and has an id before assigning
             if (newUser && newUser.id) {
               patientId = newUser.id;
             } else {
@@ -344,26 +348,32 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         return;
       }
       
-      // Enregistrer dans la file d'attente
+      // Register in queue
+      const queueEntryData = {
+        queue_id: formData.queueId,
+        patient_id: patientId,
+        practitioner_id: formData.practitionerId || null,
+        appointment_id: formData.appointmentId || null,
+        arrival_time: new Date().toISOString(),
+        status: "waiting",
+      };
+      
       const { data: queueEntry, error: queueError } = await supabase
         .from("queue_entries")
-        .insert({
-          queue_id: formData.queueId,
-          patient_id: patientId,
-          practitioner_id: formData.practitionerId || null,
-          appointment_id: formData.appointmentId || null,
-          arrival_time: new Date().toISOString(),
-          status: "waiting",
-        } as any)
+        .insert(queueEntryData as any) // Use type assertion to avoid TypeScript errors
         .select();
 
       if (queueError) throw queueError;
       
-      // Si un rendez-vous est associé, mettre à jour son statut
+      // Update appointment status if associated
       if (formData.appointmentId) {
+        const appointmentUpdate = { 
+          status: "in_progress" 
+        };
+        
         const { error: appointmentError } = await supabase
           .from("appointments")
-          .update({ status: "in_progress" as any })
+          .update(appointmentUpdate as any) // Use type assertion to avoid TypeScript errors
           .eq("id", formData.appointmentId);
 
         if (appointmentError) {
