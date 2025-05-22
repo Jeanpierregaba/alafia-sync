@@ -97,14 +97,30 @@ export function NewConversationDialog({
       return data.map(practitioner => {
         if (!practitioner) return null;
         
+        // Safely check if all required properties exist before accessing them
+        if (typeof practitioner !== 'object' || !('id' in practitioner) || !('speciality' in practitioner) || !('profiles' in practitioner)) {
+          console.warn('Practitioner object missing required properties:', practitioner);
+          return null;
+        }
+        
         // Use optional chaining and nullish coalescing for safer property access
-        const profiles = practitioner?.profiles;
-        const firstName = profiles?.first_name || '';
-        const lastName = profiles?.last_name || '';
-        const speciality = practitioner?.speciality || 'Non spécifié';
+        const profiles = practitioner.profiles;
+        
+        if (!Array.isArray(profiles) || !profiles[0]) {
+          return {
+            id: String(practitioner.id || ''),
+            name: `Unknown (${practitioner.speciality || 'Non spécifié'})`,
+            type: 'practitioner' as const
+          };
+        }
+        
+        const profile = profiles[0];
+        const firstName = profile?.first_name || '';
+        const lastName = profile?.last_name || '';
+        const speciality = practitioner.speciality || 'Non spécifié';
         
         return {
-          id: practitioner?.id || '',
+          id: String(practitioner.id || ''),
           name: `${firstName} ${lastName} (${speciality})`.trim(),
           type: 'practitioner' as const
         };
@@ -135,9 +151,15 @@ export function NewConversationDialog({
       return data.map(center => {
         if (!center) return null;
         
+        // Safely check if required properties exist
+        if (typeof center !== 'object' || !('id' in center) || !('name' in center)) {
+          console.warn('Health center object missing required properties:', center);
+          return null;
+        }
+        
         return {
-          id: center?.id || '',
-          name: center?.name || 'Centre sans nom',
+          id: String(center.id || ''),
+          name: center.name || 'Centre sans nom',
           type: 'health_center' as const
         };
       }).filter(Boolean) as RecipientInfo[];

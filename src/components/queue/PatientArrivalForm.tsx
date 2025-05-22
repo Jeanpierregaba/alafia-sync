@@ -91,8 +91,8 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         const { data, error } = await supabase
           .from("waiting_queues")
           .select("id, name, status")
-          .eq("center_id", centerId)
-          .eq("status", "active");
+          .eq("center_id", centerId as any)  // Type assertion to handle string parameter
+          .eq("status", "active" as any);    // Type assertion to handle string parameter
 
         if (error) throw error;
         
@@ -105,10 +105,12 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         
         // Format the data correctly
         const formattedQueues = data.map(queue => {
-          if (!queue) return { id: '', name: 'Unknown queue' };
+          if (!queue || typeof queue !== 'object' || !('id' in queue) || !('name' in queue)) {
+            return { id: '', name: 'Unknown queue' };
+          }
           return {
-            id: queue.id || '',
-            name: queue.name || 'File sans nom'
+            id: queue.id?.toString() || '',
+            name: queue.name?.toString() || 'File sans nom'
           };
         });
         
@@ -138,7 +140,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
               )
             )
           `)
-          .eq("center_id", centerId);
+          .eq("center_id", centerId as any);  // Type assertion to handle string parameter
 
         if (error) throw error;
         
@@ -153,20 +155,37 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         const formattedPractitioners: Practitioner[] = [];
 
         for (const item of data) {
-          if (!item || !item.practitioners || typeof item.practitioners !== 'object') {
+          // Type check the item before accessing properties
+          if (!item || typeof item !== 'object' || !('practitioners' in item)) {
             continue;
           }
           
           const practitioner = item.practitioners;
-          if (!practitioner) continue;
+          if (!practitioner || typeof practitioner !== 'object') continue;
           
-          const profiles = practitioner.profiles;
+          // Safety check for profiles
+          if (!('profiles' in practitioner) || !Array.isArray(practitioner.profiles)) {
+            if ('id' in practitioner) {
+              formattedPractitioners.push({
+                id: String(practitioner.id || ''),
+                name: 'Praticien sans nom' 
+              });
+            }
+            continue;
+          }
+          
+          const profiles = practitioner.profiles && Array.isArray(practitioner.profiles) 
+            ? practitioner.profiles[0] 
+            : null;
+          
           const { firstName, lastName } = extractProfileData(profiles);
           
-          formattedPractitioners.push({
-            id: practitioner.id || '',
-            name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
-          });
+          if ('id' in practitioner) {
+            formattedPractitioners.push({
+              id: String(practitioner.id || ''),
+              name: `${firstName} ${lastName}`.trim() || 'Praticien sans nom'
+            });
+          }
         }
         
         setPractitioners(formattedPractitioners);
@@ -189,7 +208,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         .from("profiles")
         .select("id, first_name, last_name")
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
-        .eq("user_type", "patient");
+        .eq("user_type", "patient" as any); // Type assertion to handle string parameter
 
       if (error) throw error;
       
@@ -204,12 +223,14 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
       const results: SearchResult[] = [];
       
       for (const patient of data) {
-        if (patient && typeof patient === 'object' && patient.id) {
+        if (!patient || typeof patient !== 'object') continue;
+        
+        if ('id' in patient) {
           const firstName = patient.first_name || '';
           const lastName = patient.last_name || '';
           
           results.push({
-            id: patient.id,
+            id: String(patient.id || ''),
             email: null,
             fullName: `${firstName} ${lastName}`.trim() || 'Patient sans nom'
           });
@@ -240,10 +261,10 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
             last_name
           )
         `)
-        .eq("center_id", centerId)
+        .eq("center_id", centerId as any)  // Type assertion to handle string parameter
         .gte("start_time", `${date}T00:00:00`)
         .lte("start_time", `${date}T23:59:59`)
-        .eq("status", "scheduled");
+        .eq("status", "scheduled" as any);  // Type assertion to handle string parameter
 
       if (error) throw error;
       
@@ -254,20 +275,26 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         return;
       }
       
-      // Transform data to Appointments
+      // Transform data to Appointments with type safety
       const formattedAppointments: Appointment[] = [];
       
       for (const apt of data) {
-        if (!apt) continue;
+        if (!apt || typeof apt !== 'object') continue;
         
-        const profiles = apt.profiles;
+        // First check if required properties exist
+        if (!('id' in apt) || !('patient_id' in apt) || !('start_time' in apt)) {
+          continue;
+        }
+        
+        // Safely access profiles
+        const profiles = 'profiles' in apt && apt.profiles ? apt.profiles : null;
         const { firstName, lastName } = extractProfileData(profiles);
         const patientName = `${firstName} ${lastName}`.trim() || 'Patient sans nom';
           
         formattedAppointments.push({
-          id: apt.id || '',
+          id: String(apt.id || ''),
           patientName,
-          patientId: apt.patient_id || '',
+          patientId: String(apt.patient_id || ''),
           startTime: apt.start_time ? new Date(apt.start_time).toLocaleTimeString([], {
             hour: "2-digit",
             minute: "2-digit"
@@ -311,7 +338,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
             .maybeSingle();
           
           if (!existingUserError && existingUser && existingUser.id) {
-            patientId = existingUser.id;
+            patientId = String(existingUser.id);
           } else {
             // Create a new temporary profile with a type assertion for TypeScript
             const newUserData = {
@@ -331,8 +358,8 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
             if (newUserError) throw newUserError;
             
             // Check if newUser exists and has an id before assigning
-            if (newUser && newUser.id) {
-              patientId = newUser.id;
+            if (newUser && typeof newUser === 'object' && 'id' in newUser) {
+              patientId = String(newUser.id);
             } else {
               throw new Error("Failed to create patient profile");
             }
@@ -375,7 +402,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         const { error: appointmentError } = await supabase
           .from("appointments")
           .update(appointmentUpdate as any) // Use type assertion to avoid TypeScript errors
-          .eq("id", formData.appointmentId);
+          .eq("id", formData.appointmentId as any); // Type assertion to handle string parameter
 
         if (appointmentError) {
           console.error("Erreur lors de la mise à jour du statut du rendez-vous:", appointmentError);
