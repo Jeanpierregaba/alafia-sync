@@ -1,22 +1,21 @@
 
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Button } from "./ui/button";
 import { cn } from "@/lib/utils";
-import { 
-  Home, 
-  LogOut,
-  Menu,
-  X,
-  Shield,
-  Settings,
-  UserCog,
-  Building,
-  Link2,
-  Users,
+import { Button } from "@/components/ui/button";
+import {
+  LayoutDashboard,
   Calendar,
-  CalendarRange
+  User,
+  Users,
+  Building2,
+  Settings,
+  UserRound,
+  LogOut,
+  ChevronRight,
+  Menu,
+  MessagesSquare
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface SidebarProps {
@@ -24,137 +23,212 @@ interface SidebarProps {
   setOpen: (open: boolean) => void;
 }
 
-// Define a proper interface for sidebar items
-interface SidebarItem {
-  name: string;
-  path: string;
-  icon: React.ElementType;
-  exact?: boolean; // Making 'exact' an optional property
+interface SidebarLinkProps {
+  to: string;
+  icon: React.ReactNode;
+  text: string;
+  active?: boolean;
+  subLinks?: { to: string; text: string }[];
+  onClick?: () => void;
 }
 
-const Sidebar = ({ open, setOpen }: SidebarProps) => {
-  const location = useLocation();
-  const [isMobile, setIsMobile] = useState(false);
-  const { signOut, isAdmin } = useAuth();
-
-  // Track window size
-  useEffect(() => {
-    const checkSize = () => {
-      setIsMobile(window.innerWidth < 1024);
-    };
-
-    checkSize();
-    window.addEventListener("resize", checkSize);
-    
-    return () => window.removeEventListener("resize", checkSize);
-  }, []);
-
-  // Close sidebar on mobile when navigating
-  useEffect(() => {
-    if (isMobile) {
-      setOpen(false);
-    }
-  }, [location.pathname, isMobile, setOpen]);
-
-  const commonSidebarItems: SidebarItem[] = [
-    { name: "Tableau de bord", path: "/app", icon: Home, exact: true },
-    { name: "Rendez-vous", path: "/app/appointments", icon: Calendar },
-    { name: "Médecins", path: "/app/doctors", icon: Users },
-    { name: "Mon profil", path: "/app/profile", icon: Users }
-  ];
-
-  const adminSidebarItems: SidebarItem[] = [
-    { name: "Dashboard Admin", path: "/app/admin/dashboard", icon: Shield },
-    { name: "Patients", path: "/app/admin/patients", icon: Users },
-    { name: "Praticiens", path: "/app/admin/practitioners", icon: UserCog },
-    { name: "Centres de santé", path: "/app/admin/centers", icon: Building },
-    { name: "Affiliations", path: "/app/admin/practitioner-centers", icon: Link2 },
-    { name: "Rendez-vous", path: "/app/admin/appointments", icon: CalendarRange },
-    { name: "Paramètres", path: "/app/admin/settings", icon: Settings }
-  ];
-
-  // Pour les administrateurs, n'afficher que les sections d'administration
-  const sidebarItems: SidebarItem[] = isAdmin
-    ? adminSidebarItems
-    : commonSidebarItems;
-
-  const isPathActive = (path: string, exact: boolean = false) => {
-    if (exact) {
-      return location.pathname === path;
-    }
-    return location.pathname.startsWith(path);
-  };
+const SidebarLink = ({
+  to,
+  icon,
+  text,
+  active = false,
+  subLinks,
+  onClick,
+}: SidebarLinkProps) => {
+  const [subMenuOpen, setSubMenuOpen] = React.useState(false);
+  const hasSubLinks = subLinks && subLinks.length > 0;
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {isMobile && open && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20"
-          onClick={() => setOpen(false)}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <aside 
-        className={cn(
-          "fixed lg:sticky top-0 left-0 z-30 lg:z-0 h-screen bg-background border-r",
-          "w-[280px] transition-transform duration-300 ease-in-out",
-          isMobile && !open && "-translate-x-full"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <Link to="/app" className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M8 4C5.79 4 4 5.79 4 8C4 10.21 5.79 12 8 12C10.21 12 12 10.21 12 8C12 5.79 10.21 4 8 4ZM8.5 10H7.5V8.5H6V7.5H7.5V6H8.5V7.5H10V8.5H8.5V10Z" fill="white"/>
-                </svg>
-              </div>
-              <span className="text-xl font-semibold">AlafiaSync</span>
-            </Link>
-            {isMobile && (
-              <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
-                <X size={18} />
-              </Button>
-            )}
-          </div>
-
-          {/* Nav items */}
-          <nav className="flex-1 py-6 px-4 space-y-1 overflow-y-auto">
-            {sidebarItems.map((item) => (
-              <Link 
-                key={item.path} 
-                to={item.path} 
+    <div>
+      <Link to={to} onClick={onClick}>
+        <Button
+          variant="ghost"
+          className={cn(
+            "w-full justify-start gap-2 mb-1",
+            active && "bg-accent text-accent-foreground"
+          )}
+        >
+          {icon}
+          <span className="flex-1 text-left">{text}</span>
+          {hasSubLinks && (
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 transition-transform",
+                subMenuOpen && "rotate-90"
+              )}
+              onClick={(e) => {
+                e.preventDefault();
+                setSubMenuOpen(!subMenuOpen);
+              }}
+            />
+          )}
+        </Button>
+      </Link>
+      {hasSubLinks && subMenuOpen && (
+        <div className="ml-6 border-l pl-2 my-2">
+          {subLinks.map((link) => (
+            <Link to={link.to} key={link.to}>
+              <Button
+                variant="ghost"
                 className={cn(
-                  "flex items-center space-x-3 px-3 py-2 rounded-md transition-colors",
-                  "hover:bg-secondary",
-                  isPathActive(item.path, item.exact) 
-                    ? "bg-secondary text-primary font-medium" 
-                    : "text-foreground/70"
+                  "w-full justify-start mb-1 text-sm",
+                  active && link.to === window.location.pathname && "bg-accent"
                 )}
               >
-                <item.icon size={18} />
-                <span>{item.name}</span>
-              </Link>
-            ))}
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 border-t mt-auto">
-            <Button 
-              variant="ghost" 
-              className="w-full justify-start text-foreground/70 hover:text-destructive hover:bg-destructive/10"
-              onClick={signOut}
-            >
-              <LogOut size={18} className="mr-3" />
-              Se déconnecter
-            </Button>
-          </div>
+                {link.text}
+              </Button>
+            </Link>
+          ))}
         </div>
-      </aside>
-    </>
+      )}
+    </div>
+  );
+};
+
+const Sidebar = ({ open, setOpen }: SidebarProps) => {
+  const { pathname } = useLocation();
+  const { user, isAdmin, logout } = useAuth();
+  const [loading, setLoading] = React.useState(false);
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await logout();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const adminLinks = [
+    {
+      to: "/app/admin/dashboard",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      text: "Administration",
+    },
+    {
+      to: "/app/admin/patients",
+      icon: <Users className="h-5 w-5" />,
+      text: "Patients",
+    },
+    {
+      to: "/app/admin/practitioners",
+      icon: <UserRound className="h-5 w-5" />,
+      text: "Praticiens",
+    },
+    {
+      to: "/app/admin/centers",
+      icon: <Building2 className="h-5 w-5" />,
+      text: "Centres de santé",
+    },
+    {
+      to: "/app/admin/practitioner-centers",
+      icon: <Building2 className="h-5 w-5" />,
+      text: "Praticiens - Centres",
+    },
+    {
+      to: "/app/admin/appointments",
+      icon: <Calendar className="h-5 w-5" />,
+      text: "Rendez-vous",
+    },
+    {
+      to: "/app/admin/messaging",
+      icon: <MessagesSquare className="h-5 w-5" />,
+      text: "Messagerie",
+    },
+    {
+      to: "/app/admin/settings",
+      icon: <Settings className="h-5 w-5" />,
+      text: "Paramètres",
+    },
+  ];
+
+  const userLinks = [
+    {
+      to: "/app",
+      icon: <LayoutDashboard className="h-5 w-5" />,
+      text: "Tableau de bord",
+    },
+    {
+      to: "/app/appointments",
+      icon: <Calendar className="h-5 w-5" />,
+      text: "Rendez-vous",
+    },
+    {
+      to: "/app/doctors",
+      icon: <Users className="h-5 w-5" />,
+      text: "Médecins",
+    },
+    {
+      to: "/app/messaging",
+      icon: <MessagesSquare className="h-5 w-5" />,
+      text: "Messagerie",
+    },
+    {
+      to: "/app/profile",
+      icon: <User className="h-5 w-5" />,
+      text: "Mon profil",
+    },
+  ];
+
+  const links = isAdmin ? adminLinks : userLinks;
+
+  return (
+    <div
+      className={cn(
+        "h-full border-r bg-background transition-all duration-300 ease-in-out md:relative fixed top-0 left-0 z-40 md:z-0",
+        open ? "w-64" : "w-0 md:w-16 overflow-hidden"
+      )}
+    >
+      <div className="h-16 border-b flex items-center justify-between px-4">
+        <h1
+          className={cn(
+            "font-bold text-xl transition-opacity",
+            open ? "opacity-100" : "opacity-0 md:opacity-0"
+          )}
+        >
+          MediSync
+        </h1>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
+          onClick={() => setOpen(false)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      </div>
+      <div className="flex flex-col justify-between h-[calc(100%-4rem)] py-4 overflow-y-auto">
+        <nav className="px-2">
+          {links.map((link) => (
+            <SidebarLink
+              key={link.to}
+              to={link.to}
+              icon={link.icon}
+              text={link.text}
+              active={pathname === link.to}
+            />
+          ))}
+        </nav>
+        <div className="mt-auto px-2">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-2"
+            disabled={loading}
+            onClick={handleLogout}
+          >
+            <LogOut className="h-5 w-5" />
+            <span className={cn("transition-opacity", open ? "opacity-100" : "opacity-0 md:opacity-0")}>
+              Déconnexion
+            </span>
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

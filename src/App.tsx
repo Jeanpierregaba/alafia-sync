@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -28,6 +29,10 @@ import PractitionerCentersPage from "./pages/admin/PractitionerCentersPage";
 import AdminAppointmentsPage from "./pages/admin/AppointmentsPage";
 import SettingsPage from "./pages/admin/SettingsPage";
 
+// Import de la page de messagerie
+import MessagingPage from "./pages/MessagingPage";
+import AdminMessagingPage from "./pages/admin/AdminMessagingPage";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -51,6 +56,7 @@ const AppRoutes = () => (
       <Route path="appointments" element={<AppointmentsPage />} />
       <Route path="doctors" element={<DoctorsPage />} />
       <Route path="profile" element={<ProfilePage />} />
+      <Route path="messaging" element={<MessagingPage />} />
       
       {/* Admin only routes */}
       <Route path="admin" element={<AdminRoute><Navigate to="/app/admin/dashboard" /></AdminRoute>} />
@@ -61,6 +67,7 @@ const AppRoutes = () => (
       <Route path="admin/practitioner-centers" element={<AdminRoute><PractitionerCentersPage /></AdminRoute>} />
       <Route path="admin/appointments" element={<AdminRoute><AdminAppointmentsPage /></AdminRoute>} />
       <Route path="admin/settings" element={<AdminRoute><SettingsPage /></AdminRoute>} />
+      <Route path="admin/messaging" element={<AdminRoute><AdminMessagingPage /></AdminRoute>} />
     </Route>
     
     {/* Catch-all route */}
