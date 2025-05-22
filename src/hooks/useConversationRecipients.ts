@@ -50,7 +50,7 @@ export function useConversationRecipients(recipientType: RecipientType) {
         
         if (!Array.isArray(profiles) || !profiles[0]) {
           return {
-            id: String(practitioner.id || ''),
+            id: String(practitioner.id || 'unknown-id'), // Ensure we never have an empty string
             name: `Unknown (${practitioner.speciality || 'Non spécifié'})`,
             type: 'practitioner' as const
           };
@@ -62,8 +62,8 @@ export function useConversationRecipients(recipientType: RecipientType) {
         const speciality = practitioner.speciality || 'Non spécifié';
         
         return {
-          id: String(practitioner.id || ''),
-          name: `${firstName} ${lastName} (${speciality})`.trim(),
+          id: String(practitioner.id || 'unknown-id'), // Ensure we never have an empty string
+          name: `${firstName} ${lastName} (${speciality})`.trim() || 'Unknown Name',
           type: 'practitioner' as const
         };
       }).filter(Boolean) as RecipientInfo[];
@@ -98,7 +98,7 @@ export function useConversationRecipients(recipientType: RecipientType) {
         }
         
         return {
-          id: String(center.id || ''),
+          id: String(center.id || 'unknown-id'), // Ensure we never have an empty string
           name: center.name || 'Centre sans nom',
           type: 'health_center' as const
         };

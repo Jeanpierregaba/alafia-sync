@@ -51,12 +51,15 @@ export function RecipientSelector({
             </SelectLabel>
             {recipients && recipients.length > 0 ? (
               recipients.map(recipient => (
-                <SelectItem key={recipient.id} value={recipient.id || "placeholder"}>
+                <SelectItem 
+                  key={recipient.id} 
+                  value={recipient.id || "placeholder-value"} // Ensure value is never empty
+                >
                   {recipient.name}
                 </SelectItem>
               ))
             ) : (
-              <SelectItem value="no-results" disabled>
+              <SelectItem value="no-results-found" disabled>
                 Aucun résultat trouvé
               </SelectItem>
             )}
