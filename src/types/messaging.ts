@@ -1,4 +1,3 @@
-
 import { Database } from "@/integrations/supabase/types";
 
 export type ConversationType = Database["public"]["Tables"]["conversations"]["Row"];
@@ -58,4 +57,20 @@ export interface AudioRecording {
   blob: Blob;
   url: string;
   duration: number;
+}
+
+export interface RecipientInfo {
+  id: string;
+  name: string;
+  type: 'patient' | 'practitioner' | 'health_center';
+}
+
+export type RecipientType = 'practitioner' | 'health_center';
+
+export interface ConversationFormData {
+  recipientType: RecipientType;
+  recipientId: string;
+  title: string;
+  message: string;
+  isUrgent: boolean;
 }
