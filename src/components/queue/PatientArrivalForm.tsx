@@ -88,18 +88,28 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
   useEffect(() => {
     const fetchQueues = async () => {
       try {
+        // Corriger l'erreur de typage pour la comparaison center_id et status
         const { data, error } = await supabase
           .from("waiting_queues")
           .select("id, name, status")
-          .eq("center_id", centerId)
-          .eq("status", "active");
+          .eq("center_id", centerId as any)  // Utiliser any pour contourner l'erreur de type
+          .eq("status", "active" as any);    // Utiliser any pour contourner l'erreur de type
 
         if (error) throw error;
-        setQueues(data || []);
+        
+        // Assurons-nous que data est défini et formattons-le correctement
+        const formattedQueues = (Array.isArray(data) ? data : []).map(queue => {
+          return {
+            id: queue?.id || '',
+            name: queue?.name || 'File sans nom'
+          };
+        });
+        
+        setQueues(formattedQueues);
         
         // Définir la première file comme valeur par défaut
-        if (data && data.length > 0) {
-          form.setValue("queueId", data[0].id);
+        if (formattedQueues.length > 0) {
+          form.setValue("queueId", formattedQueues[0].id);
         }
       } catch (err) {
         console.error("Erreur lors du chargement des files d'attente:", err);
@@ -121,17 +131,17 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
               )
             )
           `)
-          .eq("center_id", centerId);
+          .eq("center_id", centerId as any);  // Utiliser any pour contourner l'erreur de type
 
         if (error) throw error;
         
         // Transformer les données pour obtenir le format souhaité
         const formattedPractitioners: Practitioner[] = [];
 
-        if (data) {
+        if (Array.isArray(data)) {
           for (const item of data) {
-            if (item.practitioners && typeof item.practitioners === 'object') {
-              const practitioner = item.practitioners as any;
+            if (item?.practitioners && typeof item.practitioners === 'object') {
+              const practitioner = item.practitioners;
               if (!practitioner) continue;
               
               const profiles = practitioner.profiles;

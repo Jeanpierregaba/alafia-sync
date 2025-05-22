@@ -22,7 +22,7 @@ type AuthContextType = {
   isLoading: boolean;
   signUp: (email: string, password: string, userData: Partial<UserProfile>) => Promise<void>;
   signIn: (email: string, password: string, isAdminLogin?: boolean) => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<void>; // Assurez-vous que cette fonction est bien définie
   isAdmin: boolean;
 };
 
@@ -228,7 +228,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         signUp,
         signIn,
-        signOut,
+        signOut, // Assurez-vous que cette fonction est bien exportée
         isAdmin
       }}
     >

@@ -86,11 +86,22 @@ export function NewConversationDialog({
         throw error;
       }
       
-      return data.map(practitioner => ({
-        id: practitioner.id,
-        name: `${practitioner.profiles.first_name || ''} ${practitioner.profiles.last_name || ''} (${practitioner.speciality})`,
-        type: 'practitioner' as const
-      }));
+      // Corrigé: Ajout d'une vérification pour s'assurer que data est un tableau
+      return (Array.isArray(data) ? data : []).map(practitioner => {
+        // Vérifier si practitioner et ses propriétés sont définis
+        if (!practitioner) return null;
+        
+        const profiles = practitioner.profiles || {};
+        const firstName = profiles.first_name || '';
+        const lastName = profiles.last_name || '';
+        const speciality = practitioner.speciality || 'Non spécifié';
+        
+        return {
+          id: practitioner.id || '',
+          name: `${firstName} ${lastName} (${speciality})`.trim(),
+          type: 'practitioner' as const
+        };
+      }).filter(Boolean) as RecipientInfo[];
     }
   });
   
@@ -107,11 +118,17 @@ export function NewConversationDialog({
         throw error;
       }
       
-      return data.map(center => ({
-        id: center.id,
-        name: center.name,
-        type: 'health_center' as const
-      }));
+      // Corrigé: Ajout d'une vérification pour s'assurer que data est un tableau
+      return (Array.isArray(data) ? data : []).map(center => {
+        // Vérifier si center et ses propriétés sont définis
+        if (!center) return null;
+        
+        return {
+          id: center.id || '',
+          name: center.name || 'Centre sans nom',
+          type: 'health_center' as const
+        };
+      }).filter(Boolean) as RecipientInfo[];
     }
   });
   
@@ -142,8 +159,12 @@ export function NewConversationDialog({
         }
       });
       
-      onConversationCreated(result.conversation.id);
-      onOpenChange(false);
+      if (result && result.conversation && result.conversation.id) {
+        onConversationCreated(result.conversation.id);
+        onOpenChange(false);
+      } else {
+        throw new Error("Failed to create conversation");
+      }
     } catch (error) {
       console.error('Error creating conversation:', error);
     } finally {
