@@ -282,13 +282,14 @@ export function NewConversationDialog({
                   <SelectLabel>
                     {recipientType === 'practitioner' ? 'Médecins' : 'Centres de santé'}
                   </SelectLabel>
-                  {recipients.map(recipient => (
-                    <SelectItem key={recipient.id} value={recipient.id}>
-                      {recipient.name}
-                    </SelectItem>
-                  ))}
-                  {recipients.length === 0 && !loadingPractitioners && !loadingCenters && (
-                    <SelectItem value="none" disabled>
+                  {recipients && recipients.length > 0 ? (
+                    recipients.map(recipient => (
+                      <SelectItem key={recipient.id} value={recipient.id || "placeholder"}>
+                        {recipient.name}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-results" disabled>
                       Aucun résultat trouvé
                     </SelectItem>
                   )}
