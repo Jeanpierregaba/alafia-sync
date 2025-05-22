@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,8 +91,8 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         const { data, error } = await supabase
           .from("waiting_queues")
           .select("id, name, status")
-          .eq("center_id", centerId as any) // Use type assertion for string value
-          .eq("status", "active" as any);   // Use type assertion for string value
+          .eq("center_id", centerId)
+          .eq("status", "active");
 
         if (error) throw error;
         
@@ -137,7 +138,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
               )
             )
           `)
-          .eq("center_id", centerId as any); // Use type assertion for string value
+          .eq("center_id", centerId);
 
         if (error) throw error;
         
@@ -188,7 +189,7 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
         .from("profiles")
         .select("id, first_name, last_name")
         .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%`)
-        .eq("user_type", "patient" as any); // Use type assertion for string value
+        .eq("user_type", "patient");
 
       if (error) throw error;
       
@@ -239,10 +240,10 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
             last_name
           )
         `)
-        .eq("center_id", centerId as any) // Use type assertion for string value
+        .eq("center_id", centerId)
         .gte("start_time", `${date}T00:00:00`)
         .lte("start_time", `${date}T23:59:59`)
-        .eq("status", "scheduled" as any); // Use type assertion for string value
+        .eq("status", "scheduled");
 
       if (error) throw error;
       
@@ -306,10 +307,10 @@ export function PatientArrivalForm({ centerId, onPatientRegistered }: PatientArr
           const { data: existingUser, error: existingUserError } = await supabase
             .from('profiles')
             .select('id')
-            .eq('email', formData.patientEmail as any) // Use type assertion for string value
+            .eq('email', formData.patientEmail)
             .maybeSingle();
           
-          if (!existingUserError && existingUser) {
+          if (!existingUserError && existingUser && existingUser.id) {
             patientId = existingUser.id;
           } else {
             // Create a new temporary profile with a type assertion for TypeScript

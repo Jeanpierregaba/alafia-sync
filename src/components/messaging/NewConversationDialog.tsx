@@ -93,18 +93,18 @@ export function NewConversationDialog({
         return [];
       }
       
+      // Safely map over the data with proper type checking
       return data.map(practitioner => {
-        // Check if practitioner exists before accessing properties
         if (!practitioner) return null;
         
-        // Safe access to profiles with proper type checking
-        const profiles = practitioner.profiles || {};
-        const firstName = typeof profiles.first_name === 'string' ? profiles.first_name : '';
-        const lastName = typeof profiles.last_name === 'string' ? profiles.last_name : '';
-        const speciality = typeof practitioner.speciality === 'string' ? practitioner.speciality : 'Non spécifié';
+        // Use optional chaining and nullish coalescing for safer property access
+        const profiles = practitioner?.profiles;
+        const firstName = profiles?.first_name || '';
+        const lastName = profiles?.last_name || '';
+        const speciality = practitioner?.speciality || 'Non spécifié';
         
         return {
-          id: practitioner.id || '',
+          id: practitioner?.id || '',
           name: `${firstName} ${lastName} (${speciality})`.trim(),
           type: 'practitioner' as const
         };
@@ -131,13 +131,13 @@ export function NewConversationDialog({
         return [];
       }
       
+      // Safely map over the data with proper type checking
       return data.map(center => {
-        // Check if center exists before accessing properties
         if (!center) return null;
         
         return {
-          id: center.id || '',
-          name: center.name || 'Centre sans nom',
+          id: center?.id || '',
+          name: center?.name || 'Centre sans nom',
           type: 'health_center' as const
         };
       }).filter(Boolean) as RecipientInfo[];
@@ -174,7 +174,7 @@ export function NewConversationDialog({
         }
       });
       
-      if (result && result.conversation && result.conversation.id) {
+      if (result?.conversation?.id) {
         onConversationCreated(result.conversation.id);
         onOpenChange(false);
       } else {
