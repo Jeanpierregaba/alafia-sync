@@ -191,7 +191,7 @@ const Sidebar = ({ open, setOpen }: SidebarProps) => {
             open ? "opacity-100" : "opacity-0 md:opacity-0"
           )}
         >
-          MediSync
+          AlafiaSync
         </h1>
         <Button
           variant="ghost"
