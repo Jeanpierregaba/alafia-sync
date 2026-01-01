@@ -1,4 +1,4 @@
-# Welcome to your Our project
+# Welcome to your My project
 
 ## What technologies are used for this project?
 
